@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Editar Corredor</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+  </head>
+  <body class="centered-form">
+    <form
+      action="{{ url_for('edit_corredor', id_corredor=id_corredor) }}"
+      method="POST"
+    >
+      <h1>Editar Corredor</h1>
+      <label for="rut">Rut:</label>
+      <input
+        type="text"
+        id="rut"
+        name="rut"
+        value="{{ corredor[0] }}"
+        required
+      /><br /><br />
+
+      <label for="nombre">Nombre:</label>
+      <input
+        type="text"
+        id="nombre"
+        name="nombre"
+        value="{{ corredor[1] }}"
+        required
+      /><br /><br />
+
+      <label for="email">Email:</label>
+      <input
+        type="email"
+        id="email"
+        name="email"
+        value="{{ corredor[2] }}"
+      /><br /><br />
+
+      <label for="fono_fijo">Fono Fijo:</label>
+      <input
+        type="text"
+        id="fono_fijo"
+        name="fono_fijo"
+        value="{{ corredor[3] }}"
+      /><br /><br />
+
+      <label for="fono_movil">Fono Móvil:</label>
+      <input
+        type="text"
+        id="fono_movil"
+        name="fono_movil"
+        value="{{ corredor[4] }}"
+      /><br /><br />
+
+      <button type="submit">Guardar Cambios</button>
+      <button type="button" onclick="location.href='/corredores'">
+        Volver
+      </button>
+    </form>
+  </body>
+</html>

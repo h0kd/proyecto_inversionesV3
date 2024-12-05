@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bancos</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='images/favicon.png') }}"
+      type="image/x-icon"
+    />
+  </head>
+  <body>
+    <h1>Bancos</h1>
+
+    <!-- Botón para agregar un nuevo banco -->
+    <a href="/bancos/add"><button>Agregar Banco</button></a>
+
+    <br /><br />
+
+    <!-- Tabla de bancos -->
+    <table border="1" cellpadding="5" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Rut</th>
+          <th>Nombre</th>
+          <th>Fono Movil</th>
+          <th>Email</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for banco in bancos %}
+        <tr>
+          <td>{{ banco[0] }}</td>
+          <td>{{ banco[1] }}</td>
+          <td>{{ banco[2] }}</td>
+          <td>{{ banco[3] }}</td>
+          <td>{{ banco[4] }}</td>
+          <td>
+            <!-- Botón para editar -->
+            <a href="/bancos/edit/{{ banco[0] }}"><button>Editar</button></a>
+
+            <!-- Botón para eliminar -->
+            <form
+              action="{{ url_for('delete_banco', id_banco=banco[0]) }}"
+              method="POST"
+              style="display: inline"
+              onsubmit="return confirm('¿Estás seguro de que deseas eliminar este banco?');"
+            >
+              <button type="submit" style="background-color: red; color: white">
+                Eliminar
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <br />
+    <a href="/"><button>Volver al Inicio</button></a>
+  </body>
+</html>

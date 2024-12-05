@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Editar Empresa</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+  </head>
+  <body class="centered-form">
+    <form
+      action="{{ url_for('edit_empresa', id_empresa=id_empresa) }}"
+      method="POST"
+    >
+      <h1>Editar Empresa</h1>
+      <label for="rut">Rut:</label>
+      <input
+        type="text"
+        id="rut"
+        name="rut"
+        value="{{ empresa[0] }}"
+        required
+      /><br /><br />
+
+      <label for="nombre">Nombre:</label>
+      <input
+        type="text"
+        id="nombre"
+        name="nombre"
+        value="{{ empresa[1] }}"
+        required
+      /><br /><br />
+
+      <label for="email">Email:</label>
+      <input
+        type="email"
+        id="email"
+        name="email"
+        value="{{ empresa[2] }}"
+      /><br /><br />
+
+      <label for="fono_fijo">Fono Fijo:</label>
+      <input
+        type="text"
+        id="fono_fijo"
+        name="fono_fijo"
+        value="{{ empresa[3] }}"
+      /><br /><br />
+
+      <label for="fono_movil">Fono Móvil:</label>
+      <input
+        type="text"
+        id="fono_movil"
+        name="fono_movil"
+        value="{{ empresa[4] }}"
+      /><br /><br />
+
+      <button type="submit">Guardar Cambios</button>
+      <button type="button" onclick="location.href='/empresas'">Volver</button>
+    </form>
+  </body>
+</html>

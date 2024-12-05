@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agregar Banco</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+  </head>
+  <body class="centered-form">
+    <form action="{{ url_for('add_banco') }}" method="POST">
+      <h1>Agregar Banco</h1>
+      <label for="rut">Rut:</label>
+      <input
+        type="text"
+        id="rut"
+        name="rut"
+        oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+        required
+      /><br /><br />
+
+      <label for="nombre">Nombre:</label>
+      <input
+        type="text"
+        id="nombre"
+        name="nombre"
+        oninput="this.value = this.value.toUpperCase()"
+        required
+      /><br /><br />
+
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" /><br /><br />
+
+      <label for="fono_fijo">Fono Fijo:</label>
+      <input
+        type="text"
+        id="fono_fijo"
+        name="fono_fijo"
+        oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+      /><br /><br />
+
+      <label for="fono_movil">Fono Móvil:</label>
+      <input
+        type="text"
+        id="fono_movil"
+        name="fono_movil"
+        oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+      /><br /><br />
+
+      <button type="submit">Guardar</button>
+      <button onclick="location.href='/bancos'" type="button">Volver</button>
+    </form>
+  </body>
+</html>
