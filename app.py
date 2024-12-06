@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_login import LoginManager, login_required, logout_user, login_user
 import pandas as pd
 import plotly.express as px
@@ -97,113 +97,142 @@ def index():
 @app.route('/add_factura', methods=['GET', 'POST'])
 @login_required
 def add_factura():
-    if request.method == 'POST':
-        # Recibir datos del formulario
-        numero_factura = request.form['numero_factura']
-        rut_entidad = request.form['rut_entidad']
-
-        # Validar que solo contengan números
-        if not numero_factura.isdigit():
-            return "Error: El número de factura debe contener solo dígitos.", 400
-        if not rut_entidad.isdigit():
-            return "Error: El RUT de la entidad debe contener solo dígitos.", 400
-
-        # Continuar con el resto de la lógica
-        nombre_entidad = request.form['nombre_entidad'].upper()
-        tipo_entidad = request.form['tipo_entidad']
-        fecha = request.form['fecha']
-        tipo = request.form['tipo'].capitalize()
-        cantidad = float(request.form['cantidad'])
-        precio_unitario = float(request.form['precio_unitario'])
-        subtotal = float(request.form['subtotal'])
-        valor_total = float(request.form['valor_total'])
-        nombre_activo = request.form['nombre_activo'].upper()
-        comision = request.form.get('comision')
-        gasto = request.form.get('gasto')
-
-
-        # Manejar archivo adjunto
-        if 'archivo_factura' not in request.files:
-            return "Error: No se adjuntó un archivo.", 400
-
-        archivo = request.files['archivo_factura']
-        if archivo.filename == '':
-            return "Error: No se seleccionó un archivo.", 400
-
-        if archivo and allowed_file(archivo.filename):
-            filename = secure_filename(archivo.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file_path = file_path.replace("\\", "/")  # Convertir barras invertidas a barras normales
-            archivo.save(file_path)  # Guardar el archivo
-        else:
-            return "Error: El archivo no es válido. Solo se aceptan PDFs.", 400
-
-        # Determinar el ID de Tipo de Inversión según el tipo
+    try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT ID FROM TipoInversion WHERE Nombre = %s", (tipo,))
-        tipo_inversion_result = cursor.fetchone()
-        if not tipo_inversion_result:
+
+        if request.method == 'POST':
+            try:
+                # Registra los datos recibidos del formulario
+                print("POST recibido: Procesando datos de la factura.")
+                print(f"Datos enviados: {request.form}")
+
+                # Recibir datos del formulario
+                numero_factura = request.form['numero_factura']
+                tipo_entidad = request.form['tipo_entidad']
+                id_entidad = request.form['nombre_entidad']  # ID de la entidad seleccionada
+                nombre_activo = request.form['nombre_activo'].upper()
+                fecha = request.form['fecha']
+                tipo = request.form['tipo'].capitalize()
+                cantidad = float(request.form['cantidad'])
+                precio_unitario = float(request.form['precio_unitario'])
+                subtotal = cantidad * precio_unitario
+                valor_total = float(request.form['valor_total'])
+                comision = float(request.form.get('comision', 0))
+                gasto = float(request.form.get('gasto', 0))
+
+                # Manejar archivo adjunto
+                archivo = request.files['archivo_factura']
+                if archivo and allowed_file(archivo.filename):
+                    filename = secure_filename(archivo.filename)
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    file_path = file_path.replace("\\", "/")
+                    archivo.save(file_path)
+                    print(f"Archivo guardado en: {file_path}")
+                else:
+                    flash("Error: Archivo no válido o no seleccionado.", "error")
+                    print("Error en el archivo: Archivo no válido o no seleccionado.")
+                    return redirect(url_for('add_factura'))
+
+                # Determinar dónde guardar el ID y el valor de `tipo_entidad`
+                id_entidad_val = None
+                id_entidad_comercial_val = None
+                tipo_entidad_factura = None
+
+                if tipo_entidad in ['Banco', 'Compania', 'Corredor']:
+                    id_entidad_val = id_entidad
+                    tipo_entidad_factura = 'Entidad'
+                elif tipo_entidad in ['Cliente', 'Empresa']:
+                    id_entidad_comercial_val = id_entidad
+                    tipo_entidad_factura = 'EntidadComercial'
+                else:
+                    flash("Tipo de entidad no válido.", "error")
+                    print(f"Error: Tipo de entidad no válido - {tipo_entidad}")
+                    return redirect(url_for('add_factura'))
+
+                # Obtener ID de TipoInversion basado en el tipo
+                cursor.execute("SELECT ID FROM TipoInversion WHERE Nombre = %s", (tipo,))
+                tipo_inversion_result = cursor.fetchone()
+                if not tipo_inversion_result:
+                    flash(f"Error: Tipo de inversión '{tipo}' no encontrado.", "error")
+                    print(f"Error: Tipo de inversión '{tipo}' no encontrado.")
+                    return redirect(url_for('add_factura'))
+
+                id_tipo_inversion = tipo_inversion_result[0]
+
+                # Insertar la factura en la base de datos
+                print("Intentando insertar la factura en la base de datos.")
+                cursor.execute("""
+                    INSERT INTO Facturas 
+                    (NumeroFactura, ID_Entidad, ID_Entidad_Comercial, Fecha, Tipo, Cantidad, PrecioUnitario, SubTotal, Valor, NombreActivo, Comision, Gasto, AdjuntoFactura, ID_TipoInversion, Tipo_Entidad)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+                """, (
+                    numero_factura, id_entidad_val, id_entidad_comercial_val, fecha, tipo, cantidad, precio_unitario,
+                    subtotal, valor_total, nombre_activo, comision, gasto, file_path, id_tipo_inversion, tipo_entidad_factura
+                ))
+                conn.commit()
+                print("Factura insertada exitosamente.")
+
+                flash("Factura agregada exitosamente.", "success")
+                return redirect(url_for('listado_facturas'))
+
+            except Exception as e:
+                conn.rollback()
+                print(f"Error al agregar la factura: {e}")
+                flash(f"Error al agregar la factura: {e}", "error")
+                return redirect(url_for('add_factura'))
+
+        else:
+            print("GET recibido: Preparando el formulario para agregar factura.")
+            # Obtener las opciones para el select de Tipo de Entidad y Nombre de Entidad
+            cursor.execute("SELECT DISTINCT TipoEntidad FROM Entidad")
+            tipos_entidad = cursor.fetchall()
+
+            cursor.execute("SELECT ID_Entidad, Nombre FROM Entidad")
+            entidades = cursor.fetchall()
+
+            cursor.execute("SELECT ID_Entidad, Nombre FROM EntidadComercial")
+            entidades_comerciales = cursor.fetchall()
+
+            return render_template(
+                'facturas/add_factura.html',
+                tipos_entidad=tipos_entidad,
+                entidades=entidades,
+                entidades_comerciales=entidades_comerciales
+            )
+    except Exception as e:
+        print(f"Error en la conexión o lógica general: {e}")
+        flash(f"Error en la conexión: {e}", "error")
+        return redirect(url_for('listado_facturas'))
+    finally:
+        if 'cursor' in locals():
             cursor.close()
+        if 'conn' in locals():
             conn.close()
-            return "Error: Tipo de Inversión no encontrado.", 400
-        id_tipo_inversion = tipo_inversion_result[0]
-
-        # Verificar si la Entidad ya existe en la base de datos
-        cursor.execute("SELECT ID_Entidad FROM Entidad WHERE Rut = %s", (rut_entidad,))
-        entidad_result = cursor.fetchone()
-        if not entidad_result:
-            # Si la entidad no existe, crearla
-            cursor.execute("""
-                INSERT INTO Entidad (Rut, Nombre, TipoEntidad)
-                VALUES (%s, %s, %s);
-            """, (rut_entidad, nombre_entidad, tipo_entidad))
-            conn.commit()
-            cursor.execute("SELECT ID_Entidad FROM Entidad WHERE Rut = %s", (rut_entidad,))
-            entidad_result = cursor.fetchone()
-
-        id_corredora = entidad_result[0]  # Extraer la ID de la Entidad
-
-        # Insertar la factura en la base de datos
-        cursor.execute("""
-            INSERT INTO Facturas 
-            (NumeroFactura, ID_Corredora, Rut, Fecha, Tipo, Cantidad, PrecioUnitario, SubTotal, Valor, NombreActivo, Comision, Gasto, ID_TipoInversion, AdjuntoFactura)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
-        """, (numero_factura, id_corredora, rut_entidad, fecha, tipo, cantidad, precio_unitario, subtotal, valor_total, nombre_activo, comision, gasto, id_tipo_inversion, file_path))
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-        # Redirigir después de insertar
-        return redirect(url_for('index'))
-    else:
-        return render_template('facturas/add_factura.html')
 
 @app.route('/listado_facturas', methods=['GET'])
 @login_required
 def listado_facturas():
-    # Obtener los parámetros de ordenación
     sort_by = request.args.get('sort_by', 'NumeroFactura')  # Ordenar por NumeroFactura por defecto
     order = request.args.get('order', 'asc')  # Orden ascendente por defecto
 
-    # Validar las columnas permitidas para ordenar
     valid_columns = ['NumeroFactura', 'NombreEntidad', 'NombreActivo', 'Tipo', 'Fecha', 'Cantidad', 'PrecioUnitario', 'SubTotal', 'Valor']
     if sort_by not in valid_columns:
-        sort_by = 'NumeroFactura'  # Valor por defecto si la columna no es válida
+        sort_by = 'NumeroFactura'
 
-    # Validar la dirección del orden
     if order not in ['asc', 'desc']:
         order = 'asc'
 
-    # Conexión a la base de datos
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Consulta principal para las facturas con orden dinámico
     query = f"""
         SELECT 
             f.NumeroFactura, 
-            e.Nombre AS NombreEntidad, 
+            CASE 
+                WHEN f.tipo_entidad = 'Entidad' THEN e.Nombre
+                WHEN f.tipo_entidad = 'EntidadComercial' THEN ec.Nombre
+            END AS NombreEntidad, 
             f.NombreActivo, 
             f.Tipo,
             f.Fecha, 
@@ -213,11 +242,20 @@ def listado_facturas():
             f.Valor, 
             f.AdjuntoFactura
         FROM Facturas f
-        JOIN Entidad e ON f.ID_Corredora = e.ID_Entidad
-        ORDER BY {sort_by} {order}
+        LEFT JOIN Entidad e ON f.ID_Entidad = e.ID_Entidad AND f.tipo_entidad = 'Entidad'
+        LEFT JOIN EntidadComercial ec ON f.ID_Entidad_Comercial = ec.ID_Entidad AND f.tipo_entidad = 'EntidadComercial'
+        ORDER BY {sort_by} {order};
     """
-    cursor.execute(query)
-    facturas = cursor.fetchall()
+    try:
+        cursor.execute(query)
+        facturas = cursor.fetchall()
+    except Exception as e:
+        print(f"Error en la consulta: {e}")  # Debug
+        flash(f"Error al listar las facturas: {e}", "error")
+        facturas = []
+
+    cursor.close()
+    conn.close()
 
     return render_template('facturas/listado_facturas.html', facturas=facturas, sort_by=sort_by, order=order)
 
@@ -230,82 +268,90 @@ def editar_factura(numero_factura):
 
         if request.method == 'POST':
             try:
-                # Obtener datos del formulario
-                print("Datos recibidos del formulario:", request.form)  # Debug
+                # Recibir datos del formulario
                 nuevo_numero_factura = request.form['nuevo_numero']
-                nombre_entidad = request.form['nombre_entidad']
+                tipo_entidad = request.form['tipo_entidad']
+                id_entidad = request.form['nombre_entidad']  # ID seleccionada
                 nombre_activo = request.form['nombre_activo']
                 tipo = request.form['tipo']
                 fecha = request.form['fecha']
-                cantidad = request.form['cantidad']
-                comision = request.form['comision']
-                gasto = request.form['gasto']
+                cantidad = float(request.form['cantidad'])
+                comision = float(request.form.get('comision', 0))
+                gasto = float(request.form.get('gasto', 0))
 
-                # Validar si el nuevo número de factura ya existe
-                if str(numero_factura) != nuevo_numero_factura:
-                    cursor.execute("SELECT 1 FROM Facturas WHERE NumeroFactura = %s", (nuevo_numero_factura,))
-                    if cursor.fetchone():
-                        flash("El nuevo número de factura ya existe. Por favor, elige otro.", "error")
-                        return redirect(url_for('editar_factura', numero_factura=numero_factura))
+                # Determinar valores según el tipo de entidad
+                tipo_entidad_factura = None
+                id_entidad_val = None
+                id_entidad_comercial_val = None
 
-                # Actualizar entidad o entidad comercial
-                cursor.execute("SELECT ID_Corredora FROM Facturas WHERE NumeroFactura = %s", (numero_factura,))
-                id_entidad = cursor.fetchone()[0]
+                if tipo_entidad in ['Banco', 'Compania', 'Corredor']:
+                    tipo_entidad_factura = 'Entidad'
+                    id_entidad_val = id_entidad
+                elif tipo_entidad in ['Cliente', 'Empresa']:
+                    tipo_entidad_factura = 'EntidadComercial'
+                    id_entidad_comercial_val = id_entidad
 
-                cursor.execute("""
-                    UPDATE Entidad
-                    SET Nombre = %s
-                    WHERE ID_Entidad = %s
-                """, (nombre_entidad, id_entidad))
-
-                # Actualizar la factura (incluyendo Nombre Activo)
+                print(tipo_entidad_factura)
+                # Actualizar la factura, incluyendo la columna `tipo_entidad`
                 cursor.execute("""
                     UPDATE Facturas
-                    SET NumeroFactura = %s, NombreActivo = %s, Tipo = %s, Fecha = %s, Cantidad = %s, Comision = %s, Gasto = %s
+                    SET NumeroFactura = %s, ID_Entidad = %s, ID_Entidad_Comercial = %s, Tipo_Entidad = %s, 
+                        NombreActivo = %s, Tipo = %s, Fecha = %s, Cantidad = %s, Comision = %s, Gasto = %s
                     WHERE NumeroFactura = %s
-                """, (nuevo_numero_factura, nombre_activo, tipo, fecha, cantidad, comision, gasto, numero_factura))
-
-                if cursor.rowcount == 0:
-                    flash("No se pudo actualizar la factura. Verifica los datos.", "error")
-                    conn.rollback()
-                    return redirect(url_for('editar_factura', numero_factura=numero_factura))
-
+                """, (
+                    nuevo_numero_factura, id_entidad_val, id_entidad_comercial_val, tipo_entidad_factura,
+                    nombre_activo, tipo, fecha, cantidad, comision, gasto, numero_factura
+                ))
                 conn.commit()
+
                 flash("Factura actualizada exitosamente.", "success")
                 return redirect(url_for('listado_facturas'))
+
             except Exception as e:
                 conn.rollback()
                 flash(f"Error al actualizar la factura: {e}", "error")
+                return redirect(url_for('editar_factura', numero_factura=numero_factura))
+
         else:
-            # Obtener información de la factura
-            cursor.execute("SELECT NumeroFactura, NombreActivo, Tipo, Fecha, Cantidad, Comision, Gasto FROM Facturas WHERE NumeroFactura = %s", (numero_factura,))
+            # Obtener datos de la factura
+            cursor.execute("""
+                SELECT NumeroFactura, NombreActivo, Tipo, Fecha, Cantidad, Comision, Gasto, Tipo_Entidad, 
+                       COALESCE(ID_Entidad, ID_Entidad_Comercial) AS ID_Entidad
+                FROM Facturas 
+                WHERE NumeroFactura = %s
+            """, (numero_factura,))
             factura = cursor.fetchone()
 
+            if not factura:
+                flash("Factura no encontrada.", "error")
+                return redirect(url_for('listado_facturas'))
+
+            # Cargar tipos de entidad
             cursor.execute("""
-                SELECT e.Rut, e.Nombre, e.TipoEntidad
-                FROM Facturas f
-                JOIN Entidad e ON f.ID_Corredora = e.ID_Entidad
-                WHERE f.NumeroFactura = %s
-            """, (numero_factura,))
-            entidad = cursor.fetchone()
+                SELECT DISTINCT TipoEntidad FROM (
+                    SELECT TipoEntidad FROM Entidad
+                    UNION ALL
+                    SELECT TipoEntidad FROM EntidadComercial
+                ) subquery
+            """)
+            tipos_entidad = [row[0] for row in cursor.fetchall()]
 
-            if not entidad:
-                cursor.execute("""
-                    SELECT ec.Rut, ec.Nombre, ec.TipoEntidad
-                    FROM Facturas f
-                    JOIN EntidadComercial ec ON f.ID_Corredora = ec.ID_Entidad
-                    WHERE f.NumeroFactura = %s
-                """, (numero_factura,))
-                entidad = cursor.fetchone()
+            # Cargar entidades del tipo seleccionado
+            cursor.execute("""
+                SELECT ID_Entidad, Nombre FROM Entidad WHERE TipoEntidad = %s
+                UNION ALL
+                SELECT ID_Entidad, Nombre FROM EntidadComercial WHERE TipoEntidad = %s
+            """, (factura[7], factura[7]))
+            entidades = cursor.fetchall()
 
-            return render_template('facturas/edit_factura.html', factura=factura, entidad=entidad)
+            return render_template('facturas/edit_factura.html', factura=factura, tipos_entidad=tipos_entidad, entidades=entidades)
 
     finally:
-        # Asegurar el cierre de conexión
         if 'cursor' in locals():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
 
 @app.route('/eliminar_factura/<int:numero_factura>', methods=['POST', 'GET'])
 @login_required
@@ -319,6 +365,43 @@ def eliminar_factura(numero_factura):
     conn.close()
 
     return redirect(url_for('listado_facturas'))
+
+@app.route('/entidades_por_tipo/<tipo>', methods=['GET'])
+@login_required
+def entidades_por_tipo(tipo):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        if tipo in ['Banco', 'Corredor', 'Compania']:
+            # Consultar en la tabla Entidad
+            cursor.execute("""
+                SELECT ID_Entidad, Nombre 
+                FROM Entidad 
+                WHERE TipoEntidad = %s
+            """, (tipo,))
+        elif tipo in ['Empresa', 'Cliente']:
+            # Consultar en la tabla EntidadComercial
+            cursor.execute("""
+                SELECT ID_Entidad, Nombre 
+                FROM EntidadComercial 
+                WHERE TipoEntidad = %s
+            """, (tipo,))
+        else:
+            return jsonify({"error": "Tipo de entidad no válido"}), 400
+
+        entidades = cursor.fetchall()
+
+        # Formatear como JSON
+        resultado = [{"id": entidad[0], "nombre": entidad[1]} for entidad in entidades]
+        return jsonify(resultado)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 @app.route('/cambiar_contrasena', methods=['GET', 'POST'])
 @login_required
@@ -2164,6 +2247,116 @@ def edit_compania(id_compania):
             conn.close()
 
     return render_template('configuracion/companias/edit_companias.html', compania=compania, id_compania=id_compania)
+
+@app.route('/parametros', methods=['GET', 'POST'])
+@login_required
+def gestionar_parametros():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        if request.method == 'POST':
+            # Capturar datos del formulario
+            nombre = request.form['nombre']
+            valor = float(request.form['valor'])
+
+            # Verificar si el parámetro existe
+            cursor.execute("SELECT ID_Parametro FROM Parametros WHERE Nombre = %s", (nombre,))
+            parametro = cursor.fetchone()
+
+            if parametro:
+                # Actualizar el valor del parámetro existente
+                cursor.execute("""
+                    UPDATE Parametros
+                    SET Valor = %s, FechaActualizacion = NOW()
+                    WHERE ID_Parametro = %s
+                """, (valor, parametro[0]))
+                flash(f"Parámetro '{nombre}' actualizado.", "success")
+            else:
+                # Insertar un nuevo parámetro
+                cursor.execute("""
+                    INSERT INTO Parametros (Nombre, Valor)
+                    VALUES (%s, %s)
+                """, (nombre, valor))
+                flash(f"Parámetro '{nombre}' agregado.", "success")
+
+            conn.commit()
+
+        # Obtener todos los parámetros para mostrarlos
+        cursor.execute("SELECT ID_Parametro, Nombre, Valor, FechaActualizacion FROM Parametros")
+        parametros = cursor.fetchall()
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        flash(f"Error al gestionar parámetros: {e}", "error")
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    return render_template('configuracion/parametros/parametros.html', parametros=parametros)
+
+@app.route('/parametros/update', methods=['POST'])
+@login_required
+def actualizar_parametro():
+    try:
+        id_parametro = request.form['id_parametro']
+        nuevo_valor = float(request.form['valor'])
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Actualizar el parámetro en la base de datos
+        cursor.execute("""
+            UPDATE Parametros
+            SET Valor = %s, FechaActualizacion = NOW()
+            WHERE ID_Parametro = %s
+        """, (nuevo_valor, id_parametro))
+
+        conn.commit()
+        flash("Parámetro actualizado exitosamente.", "success")
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        flash(f"Error al actualizar el parámetro: {e}", "error")
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    return redirect(url_for('gestionar_parametros'))
+
+@app.route('/parametros/delete', methods=['POST'])
+@login_required
+def eliminar_parametro():
+    try:
+        id_parametro = request.form['id_parametro']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Eliminar el parámetro de la base de datos
+        cursor.execute("DELETE FROM Parametros WHERE ID_Parametro = %s", (id_parametro,))
+        conn.commit()
+
+        flash("Parámetro eliminado exitosamente.", "success")
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        flash(f"Error al eliminar el parámetro: {e}", "error")
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    return redirect(url_for('gestionar_parametros'))
+
 
 # Ejecutar la aplicación
 if __name__ == '__main__':

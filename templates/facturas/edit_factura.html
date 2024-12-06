@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Editar Factura</title>
+    <script
+      src="{{ url_for('static', filename='js/entidades.js') }}"
+      defer
+    ></script>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/styles.css') }}"
@@ -32,16 +36,24 @@
         oninput="this.value = this.value.replace(/[^0-9]/g, '');"
       /><br /><br />
 
+      <label for="tipo_entidad">Tipo de Entidad:</label>
+      <select id="tipo_entidad" name="tipo_entidad" required onchange="cargarEntidades(this.value)">
+        <option value="" disabled selected>Seleccione el tipo de entidad</option>
+        {% for tipo in tipos_entidad %}
+        <option value="{{ tipo }}" {% if tipo == factura[7] %}selected{% endif %}>{{ tipo }}</option>
+        {% endfor %}
+      </select>
+      <br /><br />
+
       <label for="nombre_entidad">Nombre de la Entidad:</label>
-      <input
-        type="text"
-        id="nombre_entidad"
-        name="nombre_entidad"
-        value="{{ entidad[1] if entidad else '' }}"
-        required
-        style="text-transform: uppercase"
-        oninput="this.value = this.value.toUpperCase();"
-      /><br /><br />
+      <select id="nombre_entidad" name="nombre_entidad" required>
+        {% for entidad in entidades %}
+        <option value="{{ entidad[0] }}" {% if entidad[0] == factura[8] %}selected{% endif %}>
+          {{ entidad[1] }}
+        </option>
+        {% endfor %}
+      </select>
+      <br /><br />
 
       <label for="nombre_activo">Nombre Activo:</label>
       <input
@@ -74,21 +86,20 @@
         type="number"
         step="1"
         min="1"
-        max="50000"
         id="cantidad"
         name="cantidad"
         value="{{ factura[4] }}"
-        required  
+        required
       /><br /><br />
 
-      <label for="comision">Comision:</label>
+      <label for="comision">Comisión:</label>
       <input
         type="number"
         step="0.01"
         id="comision"
         name="comision"
         value="{{ factura[5] }}"
-        required  
+        required
       /><br /><br />
 
       <label for="gasto">Gasto:</label>
@@ -98,7 +109,7 @@
         id="gasto"
         name="gasto"
         value="{{ factura[6] }}"
-        required  
+        required
       /><br /><br />
 
       <button type="submit">Guardar Cambios</button>

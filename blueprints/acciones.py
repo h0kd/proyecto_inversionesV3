@@ -34,7 +34,7 @@ def acciones():
     query = f"""
         SELECT 
             f.NumeroFactura, 
-            e.Nombre AS Corredora, 
+            e.Nombre AS Entidad, 
             f.Fecha, 
             f.Tipo, 
             f.NombreActivo AS Ticker, 
@@ -49,7 +49,7 @@ def acciones():
                 WHERE Tipo = 'Compra' AND NombreActivo = f.NombreActivo
             ) AS PrecioPromedioCompra
         FROM Facturas f
-        JOIN Entidad e ON f.ID_Corredora = e.ID_Entidad
+        JOIN Entidad e ON f.ID_Entidad = e.ID_Entidad
         WHERE 1=1
     """
 
