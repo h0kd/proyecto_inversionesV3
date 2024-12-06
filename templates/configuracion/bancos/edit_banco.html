@@ -10,7 +10,10 @@
     />
   </head>
   <body class="centered-form">
-    <form action="{{ url_for('edit_banco', id_banco=id_banco) }}" method="POST">
+    <form
+      action="{{ url_for('bancos_bp.edit_banco', id_banco=id_banco) }}"
+      method="POST"
+    >
       <h1>Editar Banco</h1>
       <label for="rut">Rut:</label>
       <input

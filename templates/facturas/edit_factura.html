@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Editar Factura</title>
     <script
+      src="{{ url_for('static', filename='js/calcularSubTotal.js') }}"
+      defer
+    ></script>
+    <script
+      src="{{ url_for('static', filename='js/calcularValorTotal.js') }}"
+      defer
+    ></script>
+    <script
       src="{{ url_for('static', filename='js/entidades.js') }}"
       defer
     ></script>
@@ -89,6 +97,18 @@
         id="cantidad"
         name="cantidad"
         value="{{ factura[4] }}"
+        oninput="calcularSubtotal(); calcularValortotal()"
+        required
+      /><br /><br />
+
+      <label for="precio_unitario">Precio Unitario:</label>
+      <input
+        type="number"
+        step="0.01"
+        id="precio_unitario"
+        name="precio_unitario"
+        value="{{ factura[9] }}"
+        oninput="calcularSubtotal(); calcularValortotal()"
         required
       /><br /><br />
 
@@ -99,6 +119,7 @@
         id="comision"
         name="comision"
         value="{{ factura[5] }}"
+        oninput="calcularValortotal()"
         required
       /><br /><br />
 
@@ -109,6 +130,28 @@
         id="gasto"
         name="gasto"
         value="{{ factura[6] }}"
+        oninput="calcularValortotal()"
+        required
+      /><br /><br />
+
+      <label for="subtotal">Sub Total:</label>
+      <input
+        type="text"
+        id="subtotal"
+        name="subtotal"
+        value="{{ factura[11] }}"
+        oninput="calcularValortotal()"
+        readonly
+      /><br /><br />
+
+      <label for="valor_total">Valor Total:</label>
+      <input
+        type="number"
+        step="0.01"
+        id="valor_total"
+        name="valor_total"
+        value="{{ factura[10] }}"
+        readonly
         required
       /><br /><br />
 

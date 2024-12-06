@@ -134,7 +134,7 @@
 
             <!-- Botón para eliminar -->
             <form
-              action="{{ url_for('delete_corredor', id_corredor=corredor[0]) }}"
+              action="{{ url_for('corredores_bp.delete_corredor', id_corredor=corredor[0]) }}"
               method="POST"
               style="display: inline"
               onsubmit="return confirm('¿Estás seguro de que deseas eliminar este Corredor?');"

@@ -135,7 +135,7 @@
 
             <!-- Botón para eliminar -->
             <form
-              action="{{ url_for('delete_compania', id_compania=compania[0]) }}"
+              action="{{ url_for('companias_bp.delete_compania', id_compania=compania[0]) }}"
               method="POST"
               style="display: inline"
               onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta compañia?');"
