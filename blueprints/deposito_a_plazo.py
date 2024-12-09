@@ -251,7 +251,7 @@ def edit_deposito(id_deposito):
             cursor.close()
             conn.close()
 
-        return redirect(url_for('deposito_a_plazo_bp.deposito_a_plazo'))
+        return redirect(url_for('deposito_a_plazo.deposito_a_plazo'))
 
     # Cargar datos existentes para el formulario
     cursor.execute("SELECT * FROM DepositoAPlazo WHERE ID_Deposito = %s", (id_deposito,))
