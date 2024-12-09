@@ -70,73 +70,34 @@ def add_deposito():
 
     if request.method == 'POST':
         try:
+            print("Capturando datos del formulario...")
+
             # Capturar datos del formulario
-            id_deposito = request.form['numero_deposito']  # Número de Depósito
-            tipo = request.form['tipo']
-            monto = float(request.form['monto'])
-            fecha_emision = request.form['fecha_emision']
-            tasa_interes = float(request.form['tasa_interes'])
-            fecha_vencimiento = request.form['fecha_vencimiento']
-            moneda = request.form.get('moneda', 'CLP')
-            interes_ganado = float(request.form.get('interes_ganado', 0))  # Valor opcional con default 0
-            tipo_beneficiario = request.form['tipo_beneficiario']  # Cliente o Empresa
-            nombre_beneficiario = request.form.get('nombre_beneficiario', '').upper()
-            rut_beneficiario = request.form.get('rut_beneficiario', '')
+            id_deposito = request.form.get('numero_deposito', '').strip()
+            tipo = request.form.get('tipo', '').strip()
+            monto = request.form.get('monto', '').strip()
+            fecha_emision = request.form.get('fecha_emision', '').strip()
+            tasa_interes = request.form.get('tasa_interes', '').strip()
+            fecha_vencimiento = request.form.get('fecha_vencimiento', '').strip()
+            moneda = request.form.get('moneda', 'CLP').strip()
+            interes_ganado = request.form.get('interes_ganado', '0').strip()
+            id_banco = request.form.get('nombre_banco', '').strip()
+            id_beneficiario = request.form.get('id_beneficiario', '').strip()
+            rut_beneficiario = request.form.get('rut_beneficiario', '').strip()
 
-            # Manejo de errores
-            if not nombre_beneficiario:
-                flash("Error: Nombre del beneficiario no proporcionado.", "error")
+            # Validar campos requeridos
+            if not id_deposito or not tipo or not monto or not fecha_emision or not tasa_interes or not fecha_vencimiento or not id_banco or not id_beneficiario:
+                flash("Todos los campos son obligatorios.", "error")
                 return redirect(url_for('deposito_a_plazo_bp.add_deposito'))
 
-            # Validar campos de renovación (solo si tipo es "Renovable")
-            capital_renovacion = float(request.form.get('capital_renovacion', 0))
-            fecha_emision_renovacion = request.form.get('fecha_emision_renovacion')
-            tasa_interes_renovacion = float(request.form.get('tasa_interes_renovacion', 0))
-            plazo_renovacion = int(request.form.get('plazo_renovacion', 0))
-            tasa_periodo = float(request.form.get('tasa_periodo', 0))
-            fecha_vencimiento_renovacion = request.form.get('fecha_vencimiento_renovacion')
-            total_pagar_renovacion = float(request.form.get('total_pagar_renovacion', 0))
+            # Convertir valores a tipos apropiados
+            monto = float(monto)
+            tasa_interes = float(tasa_interes)
+            interes_ganado = float(interes_ganado)
+            id_banco = int(id_banco)
+            id_beneficiario = int(id_beneficiario)
 
-            # IDs seleccionados de empresa y banco
-            id_banco = request.form['nombre_banco']
-
-            # Validaciones de campos obligatorios
-            if not id_deposito or not id_banco or not tipo_beneficiario:
-                flash("Faltan datos obligatorios. Verifique los campos ingresados.", "error")
-                return redirect(url_for('deposito_a_plazo_bp.add_deposito'))
-
-            # Manejo del archivo comprobante
-            comprobante = None
-            if 'comprobante' in request.files:
-                file = request.files['comprobante']
-                if file and file.filename != '':
-                    filename = secure_filename(file.filename)
-                    comprobante_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-                    file.save(comprobante_path)
-                    comprobante = comprobante_path.replace("\\", "/")
-
-            # Manejo del beneficiario
-            cursor.execute(
-                "SELECT ID_Entidad FROM EntidadComercial WHERE Rut = %s AND TipoEntidad = %s",
-                (rut_beneficiario, tipo_beneficiario)
-            )
-            entidad_result = cursor.fetchone()
-
-            if not entidad_result:
-                # Crear beneficiario si no existe
-                cursor.execute(
-                    """
-                    INSERT INTO EntidadComercial (Rut, Nombre, TipoEntidad)
-                    VALUES (%s, %s, %s) RETURNING ID_Entidad
-                    """,
-                    (rut_beneficiario, nombre_beneficiario, tipo_beneficiario)
-                )
-                id_entidadcomercial = cursor.fetchone()[0]
-            else:
-                id_entidadcomercial = entidad_result[0]
-
-            # Imprimir datos antes de la inserción
-            print("Datos capturados del formulario:")
+            print("Datos recibidos correctamente:")
             print({
                 "id_deposito": id_deposito,
                 "tipo": tipo,
@@ -146,37 +107,36 @@ def add_deposito():
                 "fecha_vencimiento": fecha_vencimiento,
                 "moneda": moneda,
                 "interes_ganado": interes_ganado,
-                "tipo_beneficiario": tipo_beneficiario,
                 "id_banco": id_banco,
-                "id_entidadcomercial": id_entidadcomercial,
-                "comprobante": comprobante,
-                "capital_renovacion": capital_renovacion,
-                "fecha_emision_renovacion": fecha_emision_renovacion,
-                "tasa_interes_renovacion": tasa_interes_renovacion,
-                "plazo_renovacion": plazo_renovacion,
-                "tasa_periodo": tasa_periodo,
-                "fecha_vencimiento_renovacion": fecha_vencimiento_renovacion,
-                "total_pagar_renovacion": total_pagar_renovacion,
+                "id_beneficiario": id_beneficiario,
+                "rut_beneficiario": rut_beneficiario,
             })
+
+            # Manejo del archivo comprobante
+            comprobante = None
+            if 'comprobante' in request.files and request.files['comprobante'].filename != '':
+                file = request.files['comprobante']
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    relative_path = os.path.join('static', 'uploads', filename)
+                    comprobante_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                    os.makedirs(os.path.dirname(comprobante_path), exist_ok=True)
+                    file.save(comprobante_path)
+                    comprobante = relative_path  # Guardar solo la ruta relativa
+                    print(f"Archivo guardado en: {comprobante_path}")
+                else:
+                    flash("El archivo no es válido o no está permitido.", "error")
+                    return redirect(url_for('deposito_a_plazo.add_deposito'))
 
             # Insertar el depósito en la base de datos
             cursor.execute("""
                 INSERT INTO DepositoAPlazo 
                 (ID_Deposito, ID_Banco, ID_EntidadComercial, FechaEmision, FechaVencimiento, Moneda, MontoInicial, TipoDeposito, 
-                InteresGanado, TasaInteres, CapitalRenovacion, FechaEmisionRenovacion, TasaInteresRenovacion, 
-                PlazoRenovacion, TasaPeriodo, FechaVencimientoRenovacion, TotalPagarRenovacion, Comprobante)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                InteresGanado, TasaInteres, Comprobante)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
-                id_deposito, id_banco, id_entidadcomercial, fecha_emision, fecha_vencimiento, moneda, monto, tipo, 
-                interes_ganado, tasa_interes, 
-                capital_renovacion if tipo == "Renovable" else None, 
-                fecha_emision_renovacion if tipo == "Renovable" else None, 
-                tasa_interes_renovacion if tipo == "Renovable" else None, 
-                plazo_renovacion if tipo == "Renovable" else None, 
-                tasa_periodo if tipo == "Renovable" else None, 
-                fecha_vencimiento_renovacion if tipo == "Renovable" else None, 
-                total_pagar_renovacion if tipo == "Renovable" else None,
-                comprobante
+                id_deposito, id_banco, id_beneficiario, fecha_emision, fecha_vencimiento, moneda, monto, tipo, 
+                interes_ganado, tasa_interes, comprobante
             ))
 
             conn.commit()
@@ -184,27 +144,38 @@ def add_deposito():
 
         except Exception as e:
             conn.rollback()
+            print(f"Error detallado: {e}")
             flash(f"Error al guardar el depósito: {e}", "error")
-            print(f"Error detallado: {e}")  # Captura el error detallado
         finally:
             cursor.close()
             conn.close()
 
-        return redirect(url_for('deposito_a_plazo_bp.deposito_a_plazo'))
+        return redirect(url_for('deposito_a_plazo.deposito_a_plazo'))
 
-    # Obtener listado de bancos para el select
+    # Cargar bancos y beneficiarios para el formulario
     try:
         cursor.execute("SELECT ID_Entidad, Nombre FROM Entidad WHERE TipoEntidad = 'Banco'")
         bancos = cursor.fetchall()
+
+        cursor.execute("SELECT ID_Entidad, Nombre FROM EntidadComercial")
+        beneficiarios = cursor.fetchall()
+
+        print("Cargando bancos y beneficiarios para el formulario...")
+        print("Bancos disponibles:", bancos)
+        print("Beneficiarios disponibles:", beneficiarios)
     except Exception as e:
+        print(f"Error al cargar datos: {e}")
         bancos = []
-        flash(f"Error al cargar bancos: {e}", "error")
+        beneficiarios = []
+        flash(f"Error al cargar datos: {e}", "error")
 
-    cursor.close()
-    conn.close()
+    finally:
+        cursor.close()
+        conn.close()
 
-    # Renderizar el formulario con la lista de bancos
-    return render_template('depositos/add_deposito.html', bancos=bancos)
+    return render_template('depositos/add_deposito.html', bancos=bancos, beneficiarios=beneficiarios)
+
+
 
 
 
@@ -310,7 +281,7 @@ def delete_deposito(id_deposito):
         cursor.close()
         conn.close()
 
-    return redirect(url_for('deposito_a_plazo_bp.deposito_a_plazo'))
+    return redirect(url_for('deposito_a_plazo.deposito_a_plazo'))
 
 
 @deposito_a_plazo_bp.route('/beneficiarios_por_tipo/<tipo>', methods=['GET'])

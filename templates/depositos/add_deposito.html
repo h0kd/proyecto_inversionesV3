@@ -82,11 +82,13 @@
       <br /><br />
 
       <label for="nombre_beneficiario">Nombre del Beneficiario:</label>
-      <select id="nombre_beneficiario" name="nombre_beneficiario" required>
-        <option value="" disabled selected>
-          Seleccione primero el tipo de beneficiario
-        </option>
+      <select id="nombre_beneficiario" name="id_beneficiario" required>
+        <option value="" disabled selected>Seleccione un beneficiario</option>
+        {% for beneficiario in beneficiarios %}
+        <option value="{{ beneficiario.id }}">{{ beneficiario.nombre }}</option>
+        {% endfor %}
       </select>
+
       <button
         type="button"
         class="btn btn-primary mt-1"

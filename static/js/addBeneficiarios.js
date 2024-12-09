@@ -27,13 +27,17 @@ function guardarBeneficiario() {
         alert("Beneficiario agregado exitosamente!");
 
         // Agregar el nuevo beneficiario al select
+        // Agregar el nuevo beneficiario al select
         const selectBeneficiario = document.getElementById(
           "nombre_beneficiario"
         );
         const option = document.createElement("option");
-        option.value = data.id;
+        option.value = data.id; // ID del beneficiario
         option.textContent = nombre;
         selectBeneficiario.appendChild(option);
+
+        // Seleccionar automáticamente el nuevo beneficiario
+        selectBeneficiario.value = data.id;
 
         // Cerrar el modal
         const modal = bootstrap.Modal.getInstance(

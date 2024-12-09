@@ -51,10 +51,11 @@ app.register_blueprint(clientes_bp)
 app.register_blueprint(parametros_bp)
 app.register_blueprint(dividendos_bp)
 
-UPLOAD_FOLDER = 'static/uploads'
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))  # Directorio base de la aplicación
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static/uploads')  # Ruta absoluta
 ALLOWED_EXTENSIONS = {'pdf'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Crea la carpeta si no existe
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():

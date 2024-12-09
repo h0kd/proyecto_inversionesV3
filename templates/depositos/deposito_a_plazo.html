@@ -193,7 +193,7 @@
           <td>
             {% if deposito[11] %}
             <a
-              href="{{ url_for('static', filename=deposito[11].replace('static/', '')) }}"
+              href="{{ deposito[11] | replace('\\', '/') }}"
               target="_blank"
               class="view-file"
               title="Abrir archivo PDF"
@@ -202,7 +202,7 @@
             {% else %} Sin comprobante {% endif %}
           </td>
           <td>
-            <a href="{{ url_for('edit_deposito', id_deposito=deposito[0]) }}">
+            <a href="{{ url_for('deposito_a_plazo.edit_deposito', id_deposito=deposito[0]) }}">
               <button>Editar</button>
             </a>
             <form
