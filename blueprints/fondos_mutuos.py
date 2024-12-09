@@ -86,76 +86,72 @@ def fondos_mutuos():
 @fondos_mutuos_bp.route('/add_fondo_mutuo', methods=['GET', 'POST'])
 @login_required
 def add_fondo_mutuo():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
     if request.method == 'POST':
-        print(request.form)  # Imprime todos los datos enviados por el formulario
-        # Capturar datos del formulario
-        nombre_fondo = request.form['nombre_fondo'].upper()
-        monto_invertido = float(request.form.get('monto_invertido'))
-        monto_final = request.form.get('monto_final')
-        if monto_final:
-            monto_final = float(monto_final)
-        else:
-            monto_final = None  # Usar None para valores nulos en SQL
-        riesgo = request.form['riesgo']
-        fecha_inicio = request.form['fecha_inicio']
-        fecha_termino = request.form.get('fecha_termino')
-        if not fecha_termino:  # Si está vacío o None
-            fecha_termino = None
-        empresa_nombre = request.form['empresa'].upper()
-        banco_nombre = request.form['banco'].upper()
+        try:
+            print(request.form)  # Debug
+            # Capturar datos del formulario
+            nombre_fondo = request.form['nombre_fondo'].upper()
+            monto_invertido = float(request.form.get('monto_invertido'))
+            monto_final = request.form.get('monto_final')
+            if monto_final:
+                monto_final = float(monto_final)
+            else:
+                monto_final = None  # Para valores nulos en SQL
+            riesgo = request.form['riesgo']
+            fecha_inicio = request.form['fecha_inicio']
+            fecha_termino = request.form.get('fecha_termino')
+            if not fecha_termino:
+                fecha_termino = None
 
-        # Manejar archivo comprobante
-        comprobante = None
-        if 'comprobante' in request.files:
-            file = request.files['comprobante']
-            if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                comprobante = os.path.join(current_app.config['UPLOAD_FOLDER'], filename).replace("\\", "/")
-                file.save(comprobante)
+            # IDs seleccionados de empresa y banco
+            id_empresa = request.form['nombre_empresa']
+            id_banco = request.form['nombre_banco']
 
-        # Conectar a la base de datos
-        conn = get_db_connection()
-        cursor = conn.cursor()
+            # Manejar archivo comprobante
+            comprobante = None
+            if 'comprobante' in request.files:
+                file = request.files['comprobante']
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    comprobante = os.path.join(current_app.config['UPLOAD_FOLDER'], filename).replace("\\", "/")
+                    file.save(comprobante)
 
-        # Buscar o crear banco
-        cursor.execute("SELECT ID_Entidad FROM Entidad WHERE Nombre = %s", (banco_nombre,))
-        banco_result = cursor.fetchone()
-        if not banco_result:
-            rut_temporal = f"TEMP-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            # Insertar fondo mutuo en la base de datos
             cursor.execute("""
-                INSERT INTO Entidad (Rut, Nombre, TipoEntidad)
-                VALUES (%s, %s, 'Banco') RETURNING ID_Entidad
-            """, (rut_temporal, banco_nombre))
-            id_banco = cursor.fetchone()[0]
-        else:
-            id_banco = banco_result[0]
+                INSERT INTO FondosMutuos 
+                (Nombre, MontoInvertido, MontoFinal, Rentabilidad, TipoRiesgo, FechaInicio, FechaTermino, ID_Entidad, ID_Banco, Comprobante)
+                VALUES (%s, %s, %s, NULL, %s, %s, %s, %s, %s, %s)
+            """, (nombre_fondo, monto_invertido, monto_final, riesgo, fecha_inicio, fecha_termino, id_empresa, id_banco, comprobante))
+            conn.commit()
 
-        # Buscar o crear empresa
-        cursor.execute("SELECT ID_Entidad FROM EntidadComercial WHERE Nombre = %s", (empresa_nombre,))
-        empresa_result = cursor.fetchone()
-        if not empresa_result:
-            rut_temporal = f"TEMP-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            cursor.execute("""
-                INSERT INTO EntidadComercial (Rut, Nombre, TipoEntidad)
-                VALUES (%s, %s, 'Empresa') RETURNING ID_Entidad
-            """, (rut_temporal, empresa_nombre))
-            id_empresa = cursor.fetchone()[0]
-        else:
-            id_empresa = empresa_result[0]
+            flash("Fondo Mutuo agregado exitosamente.", "success")
+            return redirect(url_for('fondos_mutuos'))
 
-        # Insertar fondo mutuo
-        cursor.execute("""
-            INSERT INTO FondosMutuos 
-            (Nombre, MontoInvertido, MontoFinal, Rentabilidad, TipoRiesgo, FechaInicio, FechaTermino, ID_Entidad, ID_Banco, Comprobante)
-            VALUES (%s, %s, %s, NULL, %s, %s, %s, %s, %s, %s)
-        """, (nombre_fondo, monto_invertido, monto_final, riesgo, fecha_inicio, fecha_termino, id_empresa, id_banco, comprobante))
-        conn.commit()
+        except Exception as e:
+            conn.rollback()
+            flash(f"Error al agregar el fondo mutuo: {e}", "error")
+
+    # Cargar empresas y bancos para los selects
+    try:
+        cursor.execute("SELECT ID_Entidad, Nombre FROM EntidadComercial WHERE TipoEntidad = 'Empresa'")
+        empresas = cursor.fetchall()
+
+        cursor.execute("SELECT ID_Entidad, Nombre FROM Entidad WHERE TipoEntidad = 'Banco'")
+        bancos = cursor.fetchall()
+    except Exception as e:
+        flash(f"Error al cargar empresas o bancos: {e}", "error")
+        empresas = []
+        bancos = []
+
+    finally:
         cursor.close()
         conn.close()
 
-        return redirect(url_for('fondos_mutuos'))
+    return render_template('fondos/add_fondo_mutuo.html', empresas=empresas, bancos=bancos)
 
-    return render_template('fondos/add_fondo_mutuo.html')
 
 @fondos_mutuos_bp.route('/edit_fondo_mutuo/<int:id_fondo>', methods=['GET', 'POST'])
 @login_required
@@ -217,4 +213,4 @@ def delete_fondo_mutuo(id_fondo):
         conn.close()
 
     # Redirigir al listado de fondos mutuos
-    return redirect(url_for('fondos_mutuos'))
+    return redirect(url_for('fondos_mutuos.fondos_mutuos'))

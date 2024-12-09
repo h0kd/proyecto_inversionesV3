@@ -25,23 +25,23 @@
   <body class="centered-form">
     <form action="/add_fondo_mutuo" method="POST" enctype="multipart/form-data">
       <h1>Agregar Fondo Mutuo</h1>
-      <label for="empresa">Empresa:</label>
-      <input
-        type="text"
-        id="empresa"
-        name="empresa"
-        required
-        style="text-transform: uppercase"
-      /><br /><br />
+      <label for="nombre_empresa">Nombre de la Empresa:</label>
+      <select id="nombre_empresa" name="nombre_empresa" required>
+        <option value="" disabled selected>Seleccione una empresa</option>
+        {% for empresa in empresas %}
+        <option value="{{ empresa[0] }}">{{ empresa[1] }}</option>
+        {% endfor %}
+      </select>
+      <br /><br />
 
-      <label for="banco">Banco:</label>
-      <input
-        type="text"
-        id="banco"
-        name="banco"
-        required
-        style="text-transform: uppercase"
-      /><br /><br />
+      <label for="nombre_banco">Nombre del Banco:</label>
+      <select id="nombre_banco" name="nombre_banco" required>
+        <option value="" disabled selected>Seleccione un banco</option>
+        {% for banco in bancos %}
+        <option value="{{ banco[0] }}">{{ banco[1] }}</option>
+        {% endfor %}
+      </select>
+      <br /><br />
 
       <label for="nombre_fondo">Nombre Fondo Mutuo:</label>
       <input
