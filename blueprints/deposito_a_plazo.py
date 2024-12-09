@@ -73,12 +73,12 @@ def add_deposito():
             # Capturar datos del formulario
             id_deposito = request.form['numero_deposito']  # Número de Depósito
             tipo = request.form['tipo']
-            monto = float(request.form.get('monto', 0.0)) if request.form.get('monto') else 0.0
+            monto = float(request.form['monto'])
             fecha_emision = request.form['fecha_emision']
-            tasa_interes = float(request.form.get('tasa_interes', 0.0)) if request.form.get('tasa_interes') else 0.0
+            tasa_interes = float(request.form['tasa_interes'])
             fecha_vencimiento = request.form['fecha_vencimiento']
             moneda = request.form.get('moneda', 'CLP')
-            interes_ganado = float(request.form.get('interes_ganado', 0.0)) if request.form.get('interes_ganado') else 0.0
+            interes_ganado = float(request.form.get('interes_ganado', 0))  # Valor opcional con default 0
             tipo_beneficiario = request.form['tipo_beneficiario']  # Cliente o Empresa
             nombre_beneficiario = request.form.get('nombre_beneficiario', '').upper()
             rut_beneficiario = request.form.get('rut_beneficiario', '')
@@ -89,16 +89,21 @@ def add_deposito():
                 return redirect(url_for('deposito_a_plazo_bp.add_deposito'))
 
             # Validar campos de renovación (solo si tipo es "Renovable")
-            capital_renovacion = float(request.form.get('capital_renovacion', 0.0)) if request.form.get('capital_renovacion') else None
+            capital_renovacion = float(request.form.get('capital_renovacion', 0))
             fecha_emision_renovacion = request.form.get('fecha_emision_renovacion')
-            tasa_interes_renovacion = float(request.form.get('tasa_interes_renovacion', 0.0)) if request.form.get('tasa_interes_renovacion') else None
-            plazo_renovacion = int(request.form.get('plazo_renovacion', 0)) if request.form.get('plazo_renovacion') else None
-            tasa_periodo = float(request.form.get('tasa_periodo', 0.0)) if request.form.get('tasa_periodo') else None
+            tasa_interes_renovacion = float(request.form.get('tasa_interes_renovacion', 0))
+            plazo_renovacion = int(request.form.get('plazo_renovacion', 0))
+            tasa_periodo = float(request.form.get('tasa_periodo', 0))
             fecha_vencimiento_renovacion = request.form.get('fecha_vencimiento_renovacion')
-            total_pagar_renovacion = float(request.form.get('total_pagar_renovacion', 0.0)) if request.form.get('total_pagar_renovacion') else None
+            total_pagar_renovacion = float(request.form.get('total_pagar_renovacion', 0))
 
             # IDs seleccionados de empresa y banco
             id_banco = request.form['nombre_banco']
+
+            # Validaciones de campos obligatorios
+            if not id_deposito or not id_banco or not tipo_beneficiario:
+                flash("Faltan datos obligatorios. Verifique los campos ingresados.", "error")
+                return redirect(url_for('deposito_a_plazo_bp.add_deposito'))
 
             # Manejo del archivo comprobante
             comprobante = None
@@ -130,7 +135,7 @@ def add_deposito():
             else:
                 id_entidadcomercial = entidad_result[0]
 
-            # Insertar el depósito en la base de datos
+            # Imprimir datos antes de la inserción
             print("Datos capturados del formulario:")
             print({
                 "id_deposito": id_deposito,
@@ -154,6 +159,7 @@ def add_deposito():
                 "total_pagar_renovacion": total_pagar_renovacion,
             })
 
+            # Insertar el depósito en la base de datos
             cursor.execute("""
                 INSERT INTO DepositoAPlazo 
                 (ID_Deposito, ID_Banco, ID_EntidadComercial, FechaEmision, FechaVencimiento, Moneda, MontoInicial, TipoDeposito, 
@@ -163,13 +169,13 @@ def add_deposito():
             """, (
                 id_deposito, id_banco, id_entidadcomercial, fecha_emision, fecha_vencimiento, moneda, monto, tipo, 
                 interes_ganado, tasa_interes, 
-                capital_renovacion, 
-                fecha_emision_renovacion, 
-                tasa_interes_renovacion, 
-                plazo_renovacion, 
-                tasa_periodo, 
-                fecha_vencimiento_renovacion, 
-                total_pagar_renovacion,
+                capital_renovacion if tipo == "Renovable" else None, 
+                fecha_emision_renovacion if tipo == "Renovable" else None, 
+                tasa_interes_renovacion if tipo == "Renovable" else None, 
+                plazo_renovacion if tipo == "Renovable" else None, 
+                tasa_periodo if tipo == "Renovable" else None, 
+                fecha_vencimiento_renovacion if tipo == "Renovable" else None, 
+                total_pagar_renovacion if tipo == "Renovable" else None,
                 comprobante
             ))
 
@@ -179,11 +185,12 @@ def add_deposito():
         except Exception as e:
             conn.rollback()
             flash(f"Error al guardar el depósito: {e}", "error")
+            print(f"Error detallado: {e}")  # Captura el error detallado
         finally:
             cursor.close()
             conn.close()
 
-        return redirect(url_for('deposito_a_plazo.deposito_a_plazo'))
+        return redirect(url_for('deposito_a_plazo_bp.deposito_a_plazo'))
 
     # Obtener listado de bancos para el select
     try:
