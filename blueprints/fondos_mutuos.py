@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required
 from database import get_db_connection
 from werkzeug.utils import secure_filename
@@ -128,7 +128,7 @@ def add_fondo_mutuo():
             conn.commit()
 
             flash("Fondo Mutuo agregado exitosamente.", "success")
-            return redirect(url_for('fondos_mutuos'))
+            return redirect(url_for('fondos_mutuos.fondos_mutuos'))
 
         except Exception as e:
             conn.rollback()
@@ -180,7 +180,7 @@ def edit_fondo_mutuo(id_fondo):
         conn.close()
 
         # Redirigir al listado después de guardar
-        return redirect(url_for('fondos_mutuos'))
+        return redirect(url_for('fondos_mutuos.fondos_mutuos'))
 
     # Si es GET, obtener los datos del fondo actual para mostrar en el formulario
     cursor.execute("""
@@ -214,3 +214,39 @@ def delete_fondo_mutuo(id_fondo):
 
     # Redirigir al listado de fondos mutuos
     return redirect(url_for('fondos_mutuos.fondos_mutuos'))
+
+
+@fondos_mutuos_bp.route('/agregar_entidad', methods=['POST'])
+def agregar_entidad():
+    try:
+        data = request.json
+        rut = data['rut']
+        nombre = data['nombre']
+        tipo_entidad = data['tipo_entidad']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Insertar según el tipo de entidad
+        if tipo_entidad == "Banco":
+            cursor.execute("""
+                INSERT INTO Entidad (Rut, Nombre, TipoEntidad) 
+                VALUES (%s, %s, 'Banco') RETURNING ID_Entidad
+            """, (rut, nombre))
+        elif tipo_entidad == "Empresa":
+            cursor.execute("""
+                INSERT INTO EntidadComercial (Rut, Nombre, TipoEntidad) 
+                VALUES (%s, %s, 'Empresa') RETURNING ID_Entidad
+            """, (rut, nombre))
+        else:
+            return jsonify({"success": False, "error": "Tipo de entidad inválido"}), 400
+
+        entidad_id = cursor.fetchone()[0]
+        conn.commit()
+
+        return jsonify({"success": True, "id": entidad_id})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
