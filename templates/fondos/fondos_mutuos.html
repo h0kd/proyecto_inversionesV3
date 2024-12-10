@@ -228,7 +228,7 @@
           <td>
             {% if fondo[10] %}
             <a
-              href="{{ url_for('static', filename=fondo[10].replace('static/', '')) }}"
+              href="{{ fondo[10] | replace('\\', '/') }}"
               target="_blank"
               class="view-file"
             >
@@ -239,7 +239,7 @@
           <!-- Comprobante -->
           <td>
             <a href="{{ url_for('fondos_mutuos.edit_fondo_mutuo', id_fondo=fondo[0]) }}">
-              <button>Editar</button>
+              <button class="btn btn-primary">Editar</button>
             </a>
             <form
               action="{{ url_for('fondos_mutuos.delete_fondo_mutuo', id_fondo=fondo[0]) }}"
@@ -247,7 +247,7 @@
               style="display: inline"
               onsubmit="return confirm('¿Estás seguro de que deseas eliminar este fondo mutuo?');"
             >
-              <button type="submit" style="background-color: red; color: white">
+              <button type="submit" style="background-color: red; color: white" class="btn btn-danger">
                 Eliminar
               </button>
             </form>
