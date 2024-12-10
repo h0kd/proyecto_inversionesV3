@@ -70,47 +70,36 @@ def add_deposito():
 
     if request.method == 'POST':
         try:
-            print("Capturando datos del formulario...")
-
             # Capturar datos del formulario
-            id_deposito = request.form.get('numero_deposito', '').strip()
-            tipo = request.form.get('tipo', '').strip()
-            monto = request.form.get('monto', '').strip()
-            fecha_emision = request.form.get('fecha_emision', '').strip()
-            tasa_interes = request.form.get('tasa_interes', '').strip()
-            fecha_vencimiento = request.form.get('fecha_vencimiento', '').strip()
-            moneda = request.form.get('moneda', 'CLP').strip()
-            interes_ganado = request.form.get('interes_ganado', '0').strip()
-            id_banco = request.form.get('nombre_banco', '').strip()
-            id_beneficiario = request.form.get('id_beneficiario', '').strip()
-            rut_beneficiario = request.form.get('rut_beneficiario', '').strip()
+            id_deposito = request.form['numero_deposito']
+            tipo = request.form['tipo']
+            monto = float(request.form['monto'])
+            fecha_emision = request.form['fecha_emision']
+            tasa_interes = float(request.form['tasa_interes'])
+            fecha_vencimiento = request.form['fecha_vencimiento']
+            moneda = request.form.get('moneda', 'CLP')
+            interes_ganado = float(request.form.get('interes_ganado', 0))
+            id_banco = request.form['nombre_banco']
+            id_beneficiario = request.form['id_beneficiario']
 
-            # Validar campos requeridos
-            if not id_deposito or not tipo or not monto or not fecha_emision or not tasa_interes or not fecha_vencimiento or not id_banco or not id_beneficiario:
-                flash("Todos los campos son obligatorios.", "error")
-                return redirect(url_for('deposito_a_plazo_bp.add_deposito'))
-
-            # Convertir valores a tipos apropiados
-            monto = float(monto)
-            tasa_interes = float(tasa_interes)
-            interes_ganado = float(interes_ganado)
-            id_banco = int(id_banco)
-            id_beneficiario = int(id_beneficiario)
-
-            print("Datos recibidos correctamente:")
-            print({
-                "id_deposito": id_deposito,
-                "tipo": tipo,
-                "monto": monto,
-                "fecha_emision": fecha_emision,
-                "tasa_interes": tasa_interes,
-                "fecha_vencimiento": fecha_vencimiento,
-                "moneda": moneda,
-                "interes_ganado": interes_ganado,
-                "id_banco": id_banco,
-                "id_beneficiario": id_beneficiario,
-                "rut_beneficiario": rut_beneficiario,
-            })
+            # Validar campos de renovación solo si el tipo es "Renovable"
+            if tipo == "Renovable":
+                capital_renovacion = float(request.form.get('capital_renovacion', 0))
+                fecha_emision_renovacion = request.form.get('fecha_emision_renovacion')
+                tasa_interes_renovacion = float(request.form.get('tasa_interes_renovacion', 0))
+                plazo_renovacion = int(request.form.get('plazo_renovacion', 0))
+                tasa_periodo = float(request.form.get('tasa_periodo', 0))
+                fecha_vencimiento_renovacion = request.form.get('fecha_vencimiento_renovacion')
+                total_pagar_renovacion = float(request.form.get('total_pagar_renovacion', 0))
+            else:
+                # Si no es renovable, estos campos no se guardan
+                capital_renovacion = None
+                fecha_emision_renovacion = None
+                tasa_interes_renovacion = None
+                plazo_renovacion = None
+                tasa_periodo = None
+                fecha_vencimiento_renovacion = None
+                total_pagar_renovacion = None
 
             # Manejo del archivo comprobante
             comprobante = None
@@ -122,21 +111,22 @@ def add_deposito():
                     comprobante_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
                     os.makedirs(os.path.dirname(comprobante_path), exist_ok=True)
                     file.save(comprobante_path)
-                    comprobante = relative_path  # Guardar solo la ruta relativa
-                    print(f"Archivo guardado en: {comprobante_path}")
-                else:
-                    flash("El archivo no es válido o no está permitido.", "error")
-                    return redirect(url_for('deposito_a_plazo.add_deposito'))
+                    comprobante = relative_path
 
             # Insertar el depósito en la base de datos
             cursor.execute("""
-                INSERT INTO DepositoAPlazo 
-                (ID_Deposito, ID_Banco, ID_EntidadComercial, FechaEmision, FechaVencimiento, Moneda, MontoInicial, TipoDeposito, 
-                InteresGanado, TasaInteres, Comprobante)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO DepositoAPlazo (
+                    ID_Deposito, ID_Banco, ID_EntidadComercial, FechaEmision, FechaVencimiento, Moneda, MontoInicial, TipoDeposito, 
+                    InteresGanado, TasaInteres, CapitalRenovacion, FechaEmisionRenovacion, TasaInteresRenovacion, 
+                    PlazoRenovacion, TasaPeriodo, FechaVencimientoRenovacion, TotalPagarRenovacion, Comprobante
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
-                id_deposito, id_banco, id_beneficiario, fecha_emision, fecha_vencimiento, moneda, monto, tipo, 
-                interes_ganado, tasa_interes, comprobante
+                id_deposito, id_banco, id_beneficiario, fecha_emision, fecha_vencimiento, moneda, monto, tipo,
+                interes_ganado, tasa_interes, 
+                capital_renovacion, fecha_emision_renovacion, tasa_interes_renovacion,
+                plazo_renovacion, tasa_periodo, fecha_vencimiento_renovacion, total_pagar_renovacion,
+                comprobante
             ))
 
             conn.commit()
@@ -144,7 +134,6 @@ def add_deposito():
 
         except Exception as e:
             conn.rollback()
-            print(f"Error detallado: {e}")
             flash(f"Error al guardar el depósito: {e}", "error")
         finally:
             cursor.close()
@@ -152,28 +141,20 @@ def add_deposito():
 
         return redirect(url_for('deposito_a_plazo.deposito_a_plazo'))
 
-    # Cargar bancos y beneficiarios para el formulario
+    # Obtener listado de bancos para el select
     try:
         cursor.execute("SELECT ID_Entidad, Nombre FROM Entidad WHERE TipoEntidad = 'Banco'")
         bancos = cursor.fetchall()
-
-        cursor.execute("SELECT ID_Entidad, Nombre FROM EntidadComercial")
-        beneficiarios = cursor.fetchall()
-
-        print("Cargando bancos y beneficiarios para el formulario...")
-        print("Bancos disponibles:", bancos)
-        print("Beneficiarios disponibles:", beneficiarios)
     except Exception as e:
-        print(f"Error al cargar datos: {e}")
         bancos = []
-        beneficiarios = []
-        flash(f"Error al cargar datos: {e}", "error")
+        flash(f"Error al cargar bancos: {e}", "error")
 
-    finally:
-        cursor.close()
-        conn.close()
+    cursor.close()
+    conn.close()
 
-    return render_template('depositos/add_deposito.html', bancos=bancos, beneficiarios=beneficiarios)
+    # Renderizar el formulario con la lista de bancos
+    return render_template('depositos/add_deposito.html', bancos=bancos)
+
 
 
 
