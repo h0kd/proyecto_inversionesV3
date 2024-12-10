@@ -5,67 +5,124 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Editar Depósito a Plazo</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <script src="{{ url_for('static', filename='js/toggleRenovable.js') }}"></script>
 </head>
 <body class="centered-form">
   <form action="{{ url_for('deposito_a_plazo.edit_deposito', id_deposito=deposito[0]) }}" method="POST" enctype="multipart/form-data">
     <h1>Editar Depósito a Plazo</h1>
-
+  
     <label for="id_deposito">N° Depósito:</label>
     <input
-    type="text"
-    id="id_deposito"
-    name="id_deposito"
-    value="{{ deposito[0] }}"  
-    required
+      type="text"
+      id="id_deposito"
+      name="id_deposito"
+      value="{{ deposito[0] }}"  
+      required
     /><br /><br />
 
+    <!-- Banco -->
+    <label for="nombre_banco">Banco:</label>
+    <select id="nombre_banco" name="nombre_banco" required>
+        {% for banco in bancos %}
+        <option value="{{ banco[0] }}" {% if banco[0] == deposito[1] %}selected{% endif %}>
+            {{ banco[1] }}
+        </option>
+        {% endfor %}
+    </select>
+    <br><br>
 
+    <!-- Beneficiario -->
+    <label for="id_beneficiario">Nombre del Beneficiario:</label>
+    <select id="id_beneficiario" name="id_beneficiario" required>
+        {% for beneficiario in beneficiarios %}
+        <option value="{{ beneficiario[0] }}" {% if beneficiario[0] == deposito[2] %}selected{% endif %}>
+            {{ beneficiario[1] }}
+        </option>
+        {% endfor %}
+    </select>
+    <br><br>
+
+    <!-- Campos adicionales -->
+    <label for="moneda">Moneda:</label>
+    <input type="text" id="moneda" name="moneda" value="{{ deposito[5] }}" required><br><br>
+
+    
     <label for="tipo">Tipo:</label>
-    <select id="tipo" name="tipo" required>
+    <select id="tipo" name="tipo" required onchange="toggleRenovableFields()">
       <option value="Renovable" {% if deposito[7] == 'Renovable' %}selected{% endif %}>Renovable</option>
       <option value="Fijo" {% if deposito[7] == 'Fijo' %}selected{% endif %}>Fijo</option>
     </select>
     <br /><br />
-
+    
     <label for="monto">Capital Invertido:</label>
     <input type="number" step="0.01" id="monto" name="monto" value="{{ deposito[6] }}" required />
     <br /><br />
-
+    
     <label for="fecha_emision">Fecha de Emisión:</label>
     <input type="date" id="fecha_emision" name="fecha_emision" value="{{ deposito[3] }}" required />
     <br /><br />
-
+    
     <label for="tasa_interes">Tasa de Interés:</label>
-    <input type="number" step="0.01" id="tasa_interes" name="tasa_interes" value="{{ deposito[12] }}" required />
+    <input type="number" step="0.01" id="tasa_interes" name="tasa_interes" value="{{ '{:.2f}'.format(deposito[9]) if deposito[9] is not none else '' }}" required />
     <br /><br />
-
+    
     <label for="fecha_vencimiento">Fecha de Vencimiento:</label>
     <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" value="{{ deposito[4] }}" required />
     <br /><br />
-
+    
     <label for="interes_ganado">Interés Ganado:</label>
     <input
     type="number"
     step="0.01"
     id="interes_ganado"
     name="interes_ganado"
-    value="{{ deposito[10] or '' }}"
+    value="{{ deposito[8] or '' }}"
     required
     />
     <br /><br />
-
+    
+    <label for="reajuste_ganado">Reajuste Ganado:</label>
+    <input type="number" step="0.01" id="reajuste_ganado" name="reajuste_ganado" value="{{ deposito[10] }}"><br><br>
+  
+    <!-- Campos adicionales para Renovable -->
+    <fieldset id="renovable-fields" style="display: none; border: 1px solid #ccc; padding: 10px">
+      <legend>Condiciones de Renovación</legend>
+  
+      <label for="capital_renovacion">Capital a Invertir:</label>
+      <input type="number" step="0.01" id="capital_renovacion" name="capital_renovacion" value="{{ deposito[11] or '' }}" />
+      <br /><br />
+  
+      <label for="fecha_emision_renovacion">Fecha de Emisión:</label>
+      <input type="date" id="fecha_emision_renovacion" name="fecha_emision_renovacion" value="{{ deposito[12] or '' }}" />
+      <br /><br />
+  
+      <label for="tasa_interes_renovacion">Tasa de Interés:</label>
+      <input type="number" step="0.01" id="tasa_interes_renovacion" name="tasa_interes_renovacion" value="{{ deposito[13] or '' }}" />
+      <br /><br />
+  
+      <label for="plazo_renovacion">Plazo (en días):</label>
+      <input type="number" id="plazo_renovacion" name="plazo_renovacion" value="{{ deposito[14] or '' }}" readonly />
+      <br /><br />
+  
+      <label for="tasa_periodo">Tasa de Interés del Período:</label>
+      <input type="number" step="0.001" id="tasa_periodo" name="tasa_periodo" value="{{ deposito[15] or '' }}" />
+      <br /><br />
+  
+      <label for="fecha_vencimiento_renovacion">Fecha de Vencimiento:</label>
+      <input type="date" id="fecha_vencimiento_renovacion" name="fecha_vencimiento_renovacion" value="{{ deposito[16] or '' }}" />
+      <br /><br />
+  
+      <label for="total_pagar_renovacion">Total a Pagar:</label>
+      <input type="number" step="0.01" id="total_pagar_renovacion" name="total_pagar_renovacion" value="{{ deposito[17] or '' }}" />
+      <br /><br />
+    </fieldset>
+  
     <label for="comprobante">Actualizar Comprobante:</label>
-    <input
-        type="file"
-        id="comprobante"
-        name="comprobante"
-        accept=".pdf"
-    /><br /><br />
-
+    <input type="file" id="comprobante" name="comprobante" accept=".pdf" />
+    <br /><br />
+  
     <button type="submit">Guardar Cambios</button>
-    <button type="button" onclick="location.href='/deposito_a_plazo'">
-        Volver
-      </button>
+    <button type="button" onclick="location.href='/deposito_a_plazo'">Volver</button>
   </form>
 </body>
 </html>

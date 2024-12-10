@@ -62,6 +62,8 @@ def deposito_a_plazo():
     # Renderizar la plantilla con los datos recuperados
     return render_template('depositos/deposito_a_plazo.html', depositos=depositos, sort_by=sort_by, order=order)
 
+# Add Function
+
 @deposito_a_plazo_bp.route('/add_deposito', methods=['GET', 'POST'])
 @login_required
 def add_deposito():
@@ -155,93 +157,123 @@ def add_deposito():
     # Renderizar el formulario con la lista de bancos
     return render_template('depositos/add_deposito.html', bancos=bancos)
 
-
-
-
-
+# Edit Function
 
 @deposito_a_plazo_bp.route('/edit_deposito/<int:id_deposito>', methods=['GET', 'POST'])
 @login_required
 def edit_deposito(id_deposito):
-    # Conexión a la base de datos
     conn = get_db_connection()
     cursor = conn.cursor()
 
     if request.method == 'POST':
         try:
-            # Capturar datos del formulario
-            id_deposito_new = request.form['id_deposito']
-            tipo = request.form['tipo']
+            # Capturar los datos del formulario
+            id_banco = request.form['nombre_banco']
+            id_beneficiario = request.form['id_beneficiario']
+            tipo_beneficiario = request.form['tipo_beneficiario']
+            moneda = request.form['moneda']
             monto = float(request.form['monto'])
             fecha_emision = request.form['fecha_emision']
             tasa_interes = float(request.form['tasa_interes'])
             fecha_vencimiento = request.form['fecha_vencimiento']
-            interes_ganado = float(request.form['interes_ganado'])  
+            interes_ganado = float(request.form['interes_ganado'])
             reajuste_ganado = request.form.get('reajuste_ganado', None)
 
-            print(request.form)
+            # Validar campos adicionales si es "Renovable"
+            tipo = request.form['tipo']
+            if tipo == "Renovable":
+                capital_renovacion = float(request.form.get('capital_renovacion', 0))
+                fecha_emision_renovacion = request.form.get('fecha_emision_renovacion')
+                tasa_interes_renovacion = float(request.form.get('tasa_interes_renovacion', 0))
+                plazo_renovacion = int(request.form.get('plazo_renovacion', 0))
+                tasa_periodo = float(request.form.get('tasa_periodo', 0))
+                fecha_vencimiento_renovacion = request.form.get('fecha_vencimiento_renovacion')
+                total_pagar_renovacion = float(request.form.get('total_pagar_renovacion', 0))
+            else:
+                capital_renovacion = None
+                fecha_emision_renovacion = None
+                tasa_interes_renovacion = None
+                plazo_renovacion = None
+                tasa_periodo = None
+                fecha_vencimiento_renovacion = None
+                total_pagar_renovacion = None
+
             # Manejo del comprobante
             comprobante = None
-            if 'comprobante' in request.files and request.files['comprobante'].filename:
+            if 'comprobante' in request.files and request.files['comprobante'].filename != '':
                 file = request.files['comprobante']
-                if file and allowed_file(file.filename):  # Verifica extensión válida
+                if file and allowed_file(file.filename):
                     filename = secure_filename(file.filename)
-                    comprobante = os.path.join(current_app.config['UPLOAD_FOLDER'], filename).replace("\\", "/")
-                    file.save(comprobante)  # Guarda el archivo en el servidor
-            else:
-                # Si no se adjunta nuevo comprobante, usar el existente
-                cursor.execute("SELECT Comprobante FROM DepositoAPlazo WHERE ID_Deposito = %s", (id_deposito,))
-                comprobante = cursor.fetchone()[0]  # Mantén el comprobante actual
+                    relative_path = os.path.join('static', 'uploads', filename)
+                    comprobante_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                    os.makedirs(os.path.dirname(comprobante_path), exist_ok=True)
+                    file.save(comprobante_path)
+                    comprobante = relative_path
 
-            # Construir consulta SQL para actualización
-            update_query = """
+            # Actualizar los datos del depósito
+            cursor.execute("""
                 UPDATE DepositoAPlazo
-                SET ID_Deposito = %s,
-                    TipoDeposito = %s,
-                    MontoInicial = %s,
-                    FechaEmision = %s,
-                    FechaVencimiento = %s,
-                    InteresGanado = %s,
-                    TasaInteres = %s,
-                    ReajusteGanado = %s,
-                    Comprobante = %s
+                SET ID_Banco = %s, ID_EntidadComercial = %s, FechaEmision = %s, FechaVencimiento = %s, Moneda = %s,
+                    MontoInicial = %s, TipoDeposito = %s, InteresGanado = %s, TasaInteres = %s, ReajusteGanado = %s,
+                    CapitalRenovacion = %s, FechaEmisionRenovacion = %s, TasaInteresRenovacion = %s,
+                    PlazoRenovacion = %s, TasaPeriodo = %s, FechaVencimientoRenovacion = %s,
+                    TotalPagarRenovacion = %s, Comprobante = COALESCE(%s, Comprobante)
                 WHERE ID_Deposito = %s
-            """
-            cursor.execute(update_query, (
-                id_deposito_new,
-                tipo,
-                monto,
-                fecha_emision,
-                fecha_vencimiento,
-                interes_ganado,
-                tasa_interes,
-                reajuste_ganado,
-                comprobante,
+            """, (
+                id_banco, id_beneficiario, fecha_emision, fecha_vencimiento, moneda, monto, tipo, interes_ganado,
+                tasa_interes ,reajuste_ganado, capital_renovacion, fecha_emision_renovacion, tasa_interes_renovacion,
+                plazo_renovacion, tasa_periodo, fecha_vencimiento_renovacion, total_pagar_renovacion, comprobante,
                 id_deposito
             ))
 
-            # Confirmar cambios
             conn.commit()
-
+            flash("Depósito actualizado exitosamente.", "success")
         except Exception as e:
             conn.rollback()
-            print(f"Error al actualizar el depósito: {e}")
-            raise e
-
+            flash(f"Error al actualizar el depósito: {e}", "error")
         finally:
             cursor.close()
             conn.close()
 
         return redirect(url_for('deposito_a_plazo.deposito_a_plazo'))
 
-    # Cargar datos existentes para el formulario
-    cursor.execute("SELECT * FROM DepositoAPlazo WHERE ID_Deposito = %s", (id_deposito,))
-    deposito = cursor.fetchone()
+    # Si es GET, cargar los datos existentes para editar
+    try:
+        cursor.execute("""
+            SELECT 
+            d.ID_Deposito, d.ID_Banco, d.ID_EntidadComercial, d.FechaEmision, d.FechaVencimiento, 
+            d.Moneda, d.MontoInicial, d.TipoDeposito, d.InteresGanado, d.TasaInteres, d.ReajusteGanado, 
+            d.CapitalRenovacion, d.FechaEmisionRenovacion, d.TasaInteresRenovacion, d.PlazoRenovacion, 
+            d.TasaPeriodo, d.FechaVencimientoRenovacion, d.TotalPagarRenovacion, d.Comprobante
+            FROM DepositoAPlazo d
+            WHERE d.ID_Deposito = %s
+        """, (id_deposito,))
+        deposito = cursor.fetchone()
 
-    cursor.close()
-    conn.close()
+        cursor.execute("SELECT ID_Entidad, Nombre FROM Entidad WHERE TipoEntidad = 'Banco'")
+        bancos = cursor.fetchall()
 
-    return render_template('depositos/edit_deposito.html', deposito=deposito)
+        cursor.execute("SELECT ID_Entidad, Nombre FROM EntidadComercial WHERE TipoEntidad IN ('Empresa', 'Cliente')")
+        beneficiarios = cursor.fetchall()
+    except Exception as e:
+        flash(f"Error al cargar datos: {e}", "error")
+        deposito = None
+        bancos = []
+        beneficiarios = []
+    finally:
+        cursor.close()
+        conn.close()
+
+    return render_template(
+        'depositos/edit_deposito.html',
+        deposito=deposito,
+        bancos=bancos,
+        beneficiarios=beneficiarios
+    )
+
+
+
+# Delete Function
 
 @deposito_a_plazo_bp.route('/delete_deposito/<int:id_deposito>', methods=['POST'])
 @login_required
