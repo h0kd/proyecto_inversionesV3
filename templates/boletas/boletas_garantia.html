@@ -178,7 +178,7 @@
             {% if boleta[8] %}
             <!-- Ajusta el índice según el orden de columnas -->
             <a
-              href="{{ url_for('static', filename=boleta[8].replace('static/', '')) }}"
+            href="{{ boleta[8] | replace('\\', '/') }}"
               target="_blank"
               class="view-file"
             >
@@ -187,11 +187,11 @@
             {% else %} Sin documento {% endif %}
           </td>
           <td>
-            <a href="{{ url_for('edit_boleta_garantia', numero=boleta[0]) }}">
+            <a href="{{ url_for('boletas_garantia_bp.edit_boleta_garantia', numero=boleta[0]) }}">
               <button>Editar</button>
             </a>
             <form
-              action="{{ url_for('delete_boleta_garantia', numero=boleta[0]) }}"
+              action="{{ url_for('boletas_garantia_bp.delete_boleta_garantia', numero=boleta[0]) }}"
               method="POST"
               style="display: inline"
               onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta boleta de garantía?');"

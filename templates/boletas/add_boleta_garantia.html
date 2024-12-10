@@ -25,41 +25,32 @@
         style="text-transform: uppercase"
       /><br /><br />
 
-      <label for="tomada_por_empresa">Tomada por (Empresa):</label>
-      <input
-        type="text"
-        id="tomada_por_empresa"
-        name="tomada_por_empresa"
-        required
-        style="text-transform: uppercase"
-      /><br /><br />
+      <label for="id_empresa">Tomada por (Empresa):</label>
+      <select id="id_empresa" name="id_empresa" required>
+        <option value="" disabled selected>Seleccione una empresa</option>
+        {% for empresa in empresas %}
+        <option value="{{ empresa[0] }}">{{ empresa[1] }}</option>
+        {% endfor %}
+      </select>
+      <br /><br />
 
-      <label for="tomada_por_rut">RUT de la Empresa:</label>
-      <input
-        type="text"
-        id="tomada_por_rut"
-        name="tomada_por_rut"
-        required
-        style="text-transform: uppercase"
-      /><br /><br />
+      <label for="id_banco">Banco:</label>
+      <select id="id_banco" name="id_banco" required>
+        <option value="" disabled selected>Seleccione un banco</option>
+        {% for banco in bancos %}
+        <option value="{{ banco[0] }}">{{ banco[1] }}</option>
+        {% endfor %}
+      </select>
+      <br /><br />
 
-      <label for="banco">Banco:</label>
-      <input
-        type="text"
-        id="banco"
-        name="banco"
-        required
-        style="text-transform: uppercase"
-      /><br /><br />
-
-      <label for="beneficiario">Beneficiario:</label>
-      <input
-        type="text"
-        id="beneficiario"
-        name="beneficiario"
-        required
-        style="text-transform: uppercase"
-      /><br /><br />
+      <label for="id_beneficiario">Beneficiario:</label>
+      <select id="id_beneficiario" name="id_beneficiario" required>
+        <option value="" disabled selected>Seleccione un beneficiario</option>
+        {% for beneficiario in beneficiarios %}
+        <option value="{{ beneficiario[0] }}">{{ beneficiario[1] }}</option>
+        {% endfor %}
+      </select>
+      <br /><br />
 
       <label for="glosa">Glosa:</label>
       <textarea id="glosa" name="glosa"></textarea><br /><br />
@@ -101,8 +92,9 @@
       <label for="estado">Estado:</label>
       <select id="estado" name="estado" required>
         <option value="Vigente">Vigente</option>
-        <option value="Vencida">Vencida</option></select
-      ><br /><br />
+        <option value="Vencida">Vencida</option>
+      </select>
+      <br /><br />
 
       <label for="documento">Adjuntar Documento (PDF):</label>
       <input type="file" id="documento" name="documento" accept=".pdf" />

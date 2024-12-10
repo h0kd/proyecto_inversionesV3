@@ -48,7 +48,7 @@ def add_factura():
                 else:
                     flash("Error: Archivo no válido o no seleccionado.", "error")
                     print("Error en el archivo: Archivo no válido o no seleccionado.")
-                    return redirect(url_for('add_factura'))
+                    return redirect(url_for('facturas.add_factura'))
 
                 # Determinar dónde guardar el ID y el valor de `tipo_entidad`
                 id_entidad_val = None
@@ -64,7 +64,7 @@ def add_factura():
                 else:
                     flash("Tipo de entidad no válido.", "error")
                     print(f"Error: Tipo de entidad no válido - {tipo_entidad}")
-                    return redirect(url_for('add_factura'))
+                    return redirect(url_for('facturas.add_factura'))
 
                 # Obtener ID de TipoInversion basado en el tipo
                 cursor.execute("SELECT ID FROM TipoInversion WHERE Nombre = %s", (tipo,))
@@ -72,7 +72,7 @@ def add_factura():
                 if not tipo_inversion_result:
                     flash(f"Error: Tipo de inversión '{tipo}' no encontrado.", "error")
                     print(f"Error: Tipo de inversión '{tipo}' no encontrado.")
-                    return redirect(url_for('add_factura'))
+                    return redirect(url_for('facturas.add_factura'))
 
                 id_tipo_inversion = tipo_inversion_result[0]
 
@@ -90,13 +90,13 @@ def add_factura():
                 print("Factura insertada exitosamente.")
 
                 flash("Factura agregada exitosamente.", "success")
-                return redirect(url_for('listado_facturas'))
+                return redirect(url_for('facturas.listado_facturas'))
 
             except Exception as e:
                 conn.rollback()
                 print(f"Error al agregar la factura: {e}")
                 flash(f"Error al agregar la factura: {e}", "error")
-                return redirect(url_for('add_factura'))
+                return redirect(url_for('facturas.add_factura'))
 
         else:
             print("GET recibido: Preparando el formulario para agregar factura.")
@@ -119,7 +119,7 @@ def add_factura():
     except Exception as e:
         print(f"Error en la conexión o lógica general: {e}")
         flash(f"Error en la conexión: {e}", "error")
-        return redirect(url_for('listado_facturas'))
+        return redirect(url_for('facturas.listado_facturas'))
     finally:
         if 'cursor' in locals():
             cursor.close()
@@ -225,12 +225,12 @@ def editar_factura(numero_factura):
                 conn.commit()
 
                 flash("Factura actualizada exitosamente.", "success")
-                return redirect(url_for('listado_facturas'))
+                return redirect(url_for('facturas.listado_facturas'))
 
             except Exception as e:
                 conn.rollback()
                 flash(f"Error al actualizar la factura: {e}", "error")
-                return redirect(url_for('editar_factura', numero_factura=numero_factura))
+                return redirect(url_for('facturas.editar_factura', numero_factura=numero_factura))
 
         else:
             # Obtener datos de la factura
@@ -245,7 +245,7 @@ def editar_factura(numero_factura):
 
             if not factura:
                 flash("Factura no encontrada.", "error")
-                return redirect(url_for('listado_facturas'))
+                return redirect(url_for('facturas.listado_facturas'))
 
             # Cargar tipos de entidad
             cursor.execute("""
@@ -285,7 +285,7 @@ def eliminar_factura(numero_factura):
     conn.commit()
     conn.close()
 
-    return redirect(url_for('listado_facturas'))
+    return redirect(url_for('facturas.listado_facturas'))
 
 @facturas_bp.route('/entidades_por_tipo/<tipo>', methods=['GET'])
 @login_required
