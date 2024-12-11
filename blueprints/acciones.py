@@ -11,8 +11,6 @@ acciones_bp = Blueprint('acciones', __name__)  # Crea el Blueprint
 @login_required
 def acciones():
     # Obtener parámetros de búsqueda y ordenamiento
-    search_factura = request.args.get('search_factura', '')  # Búsqueda por N° de factura
-    search_ticker = request.args.get('search_ticker', '')    # Búsqueda por ticker
     sort_by = request.args.get('sort_by', 'Fecha')          # Ordenar por Fecha por defecto
     order = request.args.get('order', 'asc')                # Orden ascendente por defecto
 
@@ -33,52 +31,24 @@ def acciones():
     # Construir la consulta SQL con filtros dinámicos
     query = f"""
         SELECT 
-            f.NumeroFactura, 
-            e.Nombre AS Entidad, 
-            f.Fecha, 
-            f.Tipo, 
-            f.NombreActivo AS Ticker, 
-            f.Cantidad, 
-            f.PrecioUnitario, 
-            f.Comision, 
-            (f.Cantidad * f.PrecioUnitario + COALESCE(f.Comision, 0)) AS CostoTotal, 
-            f.AdjuntoFactura,
-            (
-                SELECT SUM(Cantidad * PrecioUnitario + COALESCE(Comision, 0)) / SUM(Cantidad)
-                FROM Facturas
-                WHERE Tipo = 'Compra' AND NombreActivo = f.NombreActivo
-            ) AS PrecioPromedioCompra
+        e.Nombre AS NombreEntidad,
+        e.Rut AS RutEntidad,
+        SUM(f.Cantidad) AS CantidadTotal
         FROM Facturas f
-        JOIN Entidad e ON f.ID_Entidad = e.ID_Entidad
-        WHERE 1=1
-    """
-
-
-    # Consulta para obtener el total de acciones por tipo
-    cursor.execute("""
-        SELECT Tipo, SUM(Cantidad) AS TotalAcciones
-        FROM Facturas
-        GROUP BY Tipo
-    """)
-    totales = cursor.fetchall()  # Esto devolverá una lista de tuplas [('Compra', total), ('Venta', total)]
+        JOIN EntidadComercial e ON f.ID_Entidad_Comercial = e.ID_Entidad
+        WHERE e.TipoEntidad = 'Empresa'
+        GROUP BY e.Nombre, e.Rut
+        ORDER BY e.Nombre;
+        """
 
     params = []
-    if search_factura:
-        query += " AND CAST(f.NumeroFactura AS TEXT) LIKE %s"
-        params.append(f"%{search_factura}%")
-    if search_ticker:
-        query += " AND f.NombreActivo ILIKE %s"
-        params.append(f"%{search_ticker}%")
-
-    query += f" ORDER BY {sort_by} {order}"
 
     cursor.execute(query, params)
     acciones = cursor.fetchall()
     cursor.close()
     conn.close()
 
-    return render_template('acciones/acciones.html', acciones=acciones, sort_by=sort_by, order=order, 
-                           search_factura=search_factura, search_ticker=search_ticker, totales=totales)
+    return render_template('acciones/acciones.html', acciones=acciones)
 
 @acciones_bp.route('/acciones_rendimiento', methods=['GET'])
 @login_required

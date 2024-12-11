@@ -50,25 +50,19 @@
         >Solo números, sin puntos ni guiones.</span
       ><br /><br />
 
-      <label for="tipo_entidad">Tipo de Entidad:</label>
+      <label for="tipo_entidad">Corredora:</label>
       <select
         id="tipo_entidad"
         name="tipo_entidad"
-        required
         onchange="cargarEntidades(this.value)"
       >
         <option value="" disabled selected>
           Seleccione el tipo de entidad
         </option>
-        <option value="Banco">Banco</option>
-        <option value="Corredor">Corredor</option>
-        <option value="Compania">Compañía de Seguros</option>
-        <option value="Cliente">Cliente</option>
-        <option value="Empresa">Empresa</option>
       </select>
       <br /><br />
 
-      <label for="nombre_entidad">Nombre de la Entidad:</label>
+      <label for="nombre_entidad">Empresa Emisora:</label>
       <select id="nombre_entidad" name="nombre_entidad" required>
         <option value="" disabled selected>
           Seleccione primero un tipo de entidad

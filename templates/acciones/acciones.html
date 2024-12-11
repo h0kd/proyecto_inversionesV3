@@ -9,10 +9,6 @@
       rel="stylesheet"
     />
     <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/styles.css') }}"
-    />
-    <link
       rel="icon"
       href="{{ url_for('static', filename='images/favicon.png') }}"
       type="image/x-icon"
@@ -47,9 +43,6 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav mx-auto">
-            <li class="nav-item mx-3">
-              <a class="nav-link" href="/listado_facturas">Facturas</a>
-            </li>
             <li class="nav-item mx-3">
               <a class="nav-link" href="/acciones">Acciones</a>
             </li>
@@ -102,180 +95,32 @@
     </nav>
     <h1 class="ms-3">Acciones</h1>
 
-    <!-- Formulario de Búsqueda -->
-    <div class="search-bar ms-3">
-      <form method="get" action="/acciones">
-        <!-- <label for="search_factura">Buscar por N° Factura:</label>
-        <input
-          type="text"
-          id="search_factura"
-          name="search_factura"
-          value="{{ search_factura }}"
-          placeholder="Número de Factura"
-        /> -->
+    <a class="nav-link" href="/listado_facturas">
+      <button class="btn btn-info ms-3">Facturas</button>
+    </a>
 
-        <label for="search_ticker">Buscar por Ticker:</label>
-        <input
-          type="text"
-          id="search_ticker"
-          name="search_ticker"
-          value="{{ search_ticker }}"
-          placeholder="Ticker"
-        />
-
-        <button type="submit" class="btn btn-primary">Buscar</button>
-      </form>
-
-      <!-- <a href="/acciones_rendimiento">
-        <button class="btn btn-primary">Ver Gráfico de Rendimiento</button>
-      </a> -->
-
-      <a class="nav-link" href="/listado_facturas">
-        <button class="btn btn-info">Facturas</button>
-      </a>
-    </div>
-
-
-    <!-- Mostrar Totales -->
-    <div>
-      <h3 class="ms-3">Totales de Acciones</h3>
-      <table border="1" cellpadding="5" cellspacing="0">
-        <thead>
-          <tr>
-            <th>Tipo</th>
-            <th>Total de Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for total in totales %}
-          <tr>
-            <td>{{ total[0] }}</td>
-            <!-- Compra o Venta -->
-            <td>{{ total[1] }}</td>
-            <!-- Total de Acciones -->
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Tabla de Acciones -->
-    <table border="1" cellpadding="5" cellspacing="0">
+    <table class="table table-dark table-striped mt-3">
       <thead>
         <tr>
-          <th>
-            <a
-              href="?sort_by=NumeroFactura&order={{ 'asc' if sort_by != 'NumeroFactura' or order == 'desc' else 'desc' }}"
-            >
-              N° Factura
-            </a>
-          </th>
-          <th>
-            <a
-              href="?sort_by=Corredora&order={{ 'asc' if sort_by != 'Corredora' or order == 'desc' else 'desc' }}"
-            >
-              Entidad
-            </a>
-          </th>
-          <th>
-            <a
-              href="?sort_by=Fecha&order={{ 'asc' if sort_by != 'Fecha' or order == 'desc' else 'desc' }}"
-            >
-              Fecha
-            </a>
-          </th>
-          <th>
-            <a
-              href="?sort_by=Tipo&order={{ 'asc' if sort_by != 'Tipo' or order == 'desc' else 'desc' }}"
-            >
-              Tipo
-            </a>
-          </th>
-          <th>
-            <a
-              href="?sort_by=Ticker&order={{ 'asc' if sort_by != 'Ticker' or order == 'desc' else 'desc' }}"
-            >
-              Ticker
-            </a>
-          </th>
-          <th>
-            <a
-              href="?sort_by=Cantidad&order={{ 'asc' if sort_by != 'Cantidad' or order == 'desc' else 'desc' }}"
-            >
-              Cantidad
-            </a>
-          </th>
-          <th>
-            <a
-              href="?sort_by=PrecioUnitario&order={{ 'asc' if sort_by != 'PrecioUnitario' or order == 'desc' else 'desc' }}"
-            >
-              Precio Unitario
-            </a>
-          </th>
-          <th>
-            <a
-              href="?sort_by=Comision&order={{ 'asc' if sort_by != 'Comision' or order == 'desc' else 'desc' }}"
-            >
-              Comisiones
-            </a>
-          </th>
-          <th>
-            <a
-              href="?sort_by=CostoTotal&order={{ 'asc' if sort_by != 'CostoTotal' or order == 'desc' else 'desc' }}"
-            >
-              Costo Total
-            </a>
-          </th>
-          <th>
-            <a
-              href="?sort_by=PrecioPromedioCompra&order={{ 'asc' if sort_by != 'PrecioPromedioCompra' or order == 'desc' else 'desc' }}"
-            >
-              Precio Promedio Compra
-            </a>
-          </th>
-          <th>Factura</th>
-          <th>Dividendos</th>
-          <!-- Nueva columna -->
+          <th scope="col">#</th>
+          <th scope="col">Nombre de la Entidad</th>
+          <th scope="col">RUT</th>
+          <th scope="col">Cantidad Total</th>
         </tr>
       </thead>
       <tbody>
-        {% for accion in acciones %}
+        {% for idx, accion in enumerate(acciones, start=1) %}
         <tr>
-          <td>{{ accion[0] }}</td>
-          <td>{{ accion[1] }}</td>
-          <td>{{ accion[2] }}</td>
-          <td>{{ accion[3] }}</td>
-          <td>{{ accion[4] }}</td>
-          <td>{{ accion[5] }}</td>
-          <td>{{ "{:,.2f}".format(accion[6]).replace(',', '.') }}</td>
-          <td>{{ "{:,.2f}".format(accion[7] or 0).replace(',', '.') }}</td>
-          <td>{{ "{:,.2f}".format(accion[8]).replace(',', '.') }}</td>
-          <td>{{ "{:,.2f}".format(accion[10] or 0).replace(',', '.') }}</td>
-          <td>
-            {% if accion[9] %}
-            <a
-              href="{{ accion[9] | replace('\\', '/') }}"
-              target="_blank"
-              class="view-file"
-            >
-              <i class="fa-solid fa-file-pdf"></i>
-            </a>
-            {% else %}
-            <span class="no-file">Sin archivo</span>
-            {% endif %}
-          </td>
-          <td>
-            <!-- Botón para el historial de dividendos -->
-            <a href="/dividendos/{{ accion[0] }}"
-              ><button class="btn btn-primary">Historial Dividendos</button></a
-            >
-          </td>
+          <th scope="row">{{ idx }}</th>
+          <td>{{ accion[0] }}</td> <!-- Nombre de la Entidad -->
+          <td>{{ accion[1] }}</td> <!-- RUT -->
+          <td>{{ accion[2] }}</td> <!-- Cantidad Total -->
         </tr>
         {% endfor %}
       </tbody>
     </table>
+    
 
-    <br />
     <a href="/"><button class="btn btn-primary ms-3">Volver al Inicio</button></a>
   </body>
 </html>
