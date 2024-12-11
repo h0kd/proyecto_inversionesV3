@@ -93,6 +93,7 @@ def add_deposito():
                 tasa_periodo = float(request.form.get('tasa_periodo', 0))
                 fecha_vencimiento_renovacion = request.form.get('fecha_vencimiento_renovacion')
                 total_pagar_renovacion = float(request.form.get('total_pagar_renovacion', 0))
+                reajuste_ganado = float(request.form.get('reajuste_ganado', 0))
             else:
                 # Si no es renovable, estos campos no se guardan
                 capital_renovacion = None
@@ -102,6 +103,7 @@ def add_deposito():
                 tasa_periodo = None
                 fecha_vencimiento_renovacion = None
                 total_pagar_renovacion = None
+                reajuste_ganado = None
 
             # Manejo del archivo comprobante
             comprobante = None
@@ -120,14 +122,14 @@ def add_deposito():
                 INSERT INTO DepositoAPlazo (
                     ID_Deposito, ID_Banco, ID_EntidadComercial, FechaEmision, FechaVencimiento, Moneda, MontoInicial, TipoDeposito, 
                     InteresGanado, TasaInteres, CapitalRenovacion, FechaEmisionRenovacion, TasaInteresRenovacion, 
-                    PlazoRenovacion, TasaPeriodo, FechaVencimientoRenovacion, TotalPagarRenovacion, Comprobante
+                    PlazoRenovacion, TasaPeriodo, FechaVencimientoRenovacion, TotalPagarRenovacion, ReajusteGanado, Comprobante
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 id_deposito, id_banco, id_beneficiario, fecha_emision, fecha_vencimiento, moneda, monto, tipo,
                 interes_ganado, tasa_interes, 
                 capital_renovacion, fecha_emision_renovacion, tasa_interes_renovacion,
-                plazo_renovacion, tasa_periodo, fecha_vencimiento_renovacion, total_pagar_renovacion,
+                plazo_renovacion, tasa_periodo, fecha_vencimiento_renovacion, total_pagar_renovacion, reajuste_ganado, 
                 comprobante
             ))
 
@@ -168,27 +170,30 @@ def edit_deposito(id_deposito):
     if request.method == 'POST':
         try:
             # Capturar los datos del formulario
-            id_banco = request.form['nombre_banco']
-            id_beneficiario = request.form['id_beneficiario']
-            tipo_beneficiario = request.form['tipo_beneficiario']
-            moneda = request.form['moneda']
-            monto = float(request.form['monto'])
-            fecha_emision = request.form['fecha_emision']
-            tasa_interes = float(request.form['tasa_interes'])
-            fecha_vencimiento = request.form['fecha_vencimiento']
-            interes_ganado = float(request.form['interes_ganado'])
-            reajuste_ganado = request.form.get('reajuste_ganado', None)
+            # Capturar el ID original y el nuevo ID
+            original_id_deposito = request.form.get('original_id_deposito')
+            new_id_deposito = request.form.get('id_deposito')
+            id_banco = request.form.get('nombre_banco')
+            id_beneficiario = request.form.get('id_beneficiario')
+            tipo_beneficiario = request.form.get('tipo_beneficiario')
+            moneda = request.form.get('moneda', '').strip()
+            monto = float(request.form.get('monto', '0').strip() or 0)
+            fecha_emision = request.form.get('fecha_emision')
+            tasa_interes = float(request.form.get('tasa_interes', '0').strip() or 0)
+            fecha_vencimiento = request.form.get('fecha_vencimiento')
+            interes_ganado = float(request.form.get('interes_ganado', '0').strip() or 0)
+            reajuste_ganado = float(request.form.get('reajuste_ganado', '0').strip() or 0)
 
             # Validar campos adicionales si es "Renovable"
-            tipo = request.form['tipo']
+            tipo = request.form.get('tipo')
             if tipo == "Renovable":
-                capital_renovacion = float(request.form.get('capital_renovacion', 0))
+                capital_renovacion = float(request.form.get('capital_renovacion', '0').strip() or 0)
                 fecha_emision_renovacion = request.form.get('fecha_emision_renovacion')
-                tasa_interes_renovacion = float(request.form.get('tasa_interes_renovacion', 0))
-                plazo_renovacion = int(request.form.get('plazo_renovacion', 0))
-                tasa_periodo = float(request.form.get('tasa_periodo', 0))
+                tasa_interes_renovacion = float(request.form.get('tasa_interes_renovacion', '0').strip() or 0)
+                plazo_renovacion = int(request.form.get('plazo_renovacion', '0').strip() or 0)
+                tasa_periodo = float(request.form.get('tasa_periodo', '0').strip() or 0)
                 fecha_vencimiento_renovacion = request.form.get('fecha_vencimiento_renovacion')
-                total_pagar_renovacion = float(request.form.get('total_pagar_renovacion', 0))
+                total_pagar_renovacion = float(request.form.get('total_pagar_renovacion', '0').strip() or 0)
             else:
                 capital_renovacion = None
                 fecha_emision_renovacion = None
@@ -198,37 +203,67 @@ def edit_deposito(id_deposito):
                 fecha_vencimiento_renovacion = None
                 total_pagar_renovacion = None
 
-            # Manejo del comprobante
+            # Manejo del archivo adjunto
             comprobante = None
-            if 'comprobante' in request.files and request.files['comprobante'].filename != '':
+            if 'comprobante' in request.files:
                 file = request.files['comprobante']
-                if file and allowed_file(file.filename):
+                if file and file.filename:
                     filename = secure_filename(file.filename)
-                    relative_path = os.path.join('static', 'uploads', filename)
-                    comprobante_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-                    os.makedirs(os.path.dirname(comprobante_path), exist_ok=True)
-                    file.save(comprobante_path)
-                    comprobante = relative_path
+                    comprobante = os.path.join('static/uploads', filename)
+                    file.save(comprobante)
+                else:
+                    cursor.execute("SELECT Comprobante FROM DepositoAPlazo WHERE ID_Deposito = %s", (id_deposito,))
+                    comprobante = cursor.fetchone()[0]
+
+            # Verificar datos capturados
+            print("Datos preparados para el UPDATE:")
+            print("ID original:", original_id_deposito)
+            print("Nuevo ID:", new_id_deposito)
+            print({
+                "id_banco": id_banco,
+                "id_beneficiario": id_beneficiario,
+                "fecha_emision": fecha_emision,
+                "fecha_vencimiento": fecha_vencimiento,
+                "moneda": moneda,
+                "monto": monto,
+                "tipo": tipo,
+                "interes_ganado": interes_ganado,
+                "tasa_interes": tasa_interes,
+                "reajuste_ganado": reajuste_ganado,
+                "capital_renovacion": capital_renovacion,
+                "fecha_emision_renovacion": fecha_emision_renovacion,
+                "tasa_interes_renovacion": tasa_interes_renovacion,
+                "plazo_renovacion": plazo_renovacion,
+                "tasa_periodo": tasa_periodo,
+                "fecha_vencimiento_renovacion": fecha_vencimiento_renovacion,
+                "total_pagar_renovacion": total_pagar_renovacion,
+                "comprobante": comprobante,
+                "id_deposito": id_deposito
+            })
 
             # Actualizar los datos del depósito
             cursor.execute("""
                 UPDATE DepositoAPlazo
-                SET ID_Banco = %s, ID_EntidadComercial = %s, FechaEmision = %s, FechaVencimiento = %s, Moneda = %s,
-                    MontoInicial = %s, TipoDeposito = %s, InteresGanado = %s, TasaInteres = %s, ReajusteGanado = %s,
-                    CapitalRenovacion = %s, FechaEmisionRenovacion = %s, TasaInteresRenovacion = %s,
-                    PlazoRenovacion = %s, TasaPeriodo = %s, FechaVencimientoRenovacion = %s,
-                    TotalPagarRenovacion = %s, Comprobante = COALESCE(%s, Comprobante)
+                SET ID_Deposito = %s, ID_Banco = %s, ID_EntidadComercial = %s, FechaEmision = %s, FechaVencimiento = %s,
+                    Moneda = %s, MontoInicial = %s, TipoDeposito = %s, InteresGanado = %s, TasaInteres = %s,
+                    ReajusteGanado = %s, CapitalRenovacion = %s, FechaEmisionRenovacion = %s, TasaInteresRenovacion = %s,
+                    PlazoRenovacion = %s, TasaPeriodo = %s, FechaVencimientoRenovacion = %s, TotalPagarRenovacion = %s,
+                    Comprobante = COALESCE(%s, Comprobante)
                 WHERE ID_Deposito = %s
             """, (
-                id_banco, id_beneficiario, fecha_emision, fecha_vencimiento, moneda, monto, tipo, interes_ganado,
-                tasa_interes ,reajuste_ganado, capital_renovacion, fecha_emision_renovacion, tasa_interes_renovacion,
-                plazo_renovacion, tasa_periodo, fecha_vencimiento_renovacion, total_pagar_renovacion, comprobante,
-                id_deposito
+                new_id_deposito, id_banco, id_beneficiario, fecha_emision, fecha_vencimiento, moneda, monto, tipo,
+                interes_ganado, tasa_interes, reajuste_ganado, capital_renovacion, fecha_emision_renovacion,
+                tasa_interes_renovacion, plazo_renovacion, tasa_periodo, fecha_vencimiento_renovacion,
+                total_pagar_renovacion, comprobante, original_id_deposito
             ))
-
-            conn.commit()
-            flash("Depósito actualizado exitosamente.", "success")
+            print("Filas afectadas por el UPDATE:", cursor.rowcount)
+            if cursor.rowcount == 0:
+                flash("No se realizaron cambios.", "info")
+            else:
+                conn.commit()
+                flash("Depósito actualizado exitosamente.", "success")
         except Exception as e:
+            print("Error al realizar el UPDATE:", str(e))
             conn.rollback()
             flash(f"Error al actualizar el depósito: {e}", "error")
         finally:
@@ -241,10 +276,10 @@ def edit_deposito(id_deposito):
     try:
         cursor.execute("""
             SELECT 
-            d.ID_Deposito, d.ID_Banco, d.ID_EntidadComercial, d.FechaEmision, d.FechaVencimiento, 
-            d.Moneda, d.MontoInicial, d.TipoDeposito, d.InteresGanado, d.TasaInteres, d.ReajusteGanado, 
-            d.CapitalRenovacion, d.FechaEmisionRenovacion, d.TasaInteresRenovacion, d.PlazoRenovacion, 
-            d.TasaPeriodo, d.FechaVencimientoRenovacion, d.TotalPagarRenovacion, d.Comprobante
+                d.ID_Deposito, d.ID_Banco, d.ID_EntidadComercial, d.FechaEmision, d.FechaVencimiento, 
+                d.Moneda, d.MontoInicial, d.TipoDeposito, d.InteresGanado, d.TasaInteres, d.ReajusteGanado, 
+                d.CapitalRenovacion, d.FechaEmisionRenovacion, d.TasaInteresRenovacion, d.PlazoRenovacion, 
+                d.TasaPeriodo, d.FechaVencimientoRenovacion, d.TotalPagarRenovacion, d.Comprobante
             FROM DepositoAPlazo d
             WHERE d.ID_Deposito = %s
         """, (id_deposito,))
@@ -270,6 +305,7 @@ def edit_deposito(id_deposito):
         bancos=bancos,
         beneficiarios=beneficiarios
     )
+
 
 
 

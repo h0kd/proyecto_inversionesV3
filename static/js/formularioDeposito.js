@@ -44,3 +44,43 @@ function calculatePlazoRenovacion() {
     document.getElementById("plazo_renovacion").value = "";
   }
 }
+
+function updateCapitalRenovacion() {
+  const capitalInvertido =
+    parseFloat(document.getElementById("monto").value) || 0;
+  const interesGanado =
+    parseFloat(document.getElementById("interes_ganado").value) || 0;
+  const reajusteGanado =
+    parseFloat(document.getElementById("reajuste_ganado").value) || 0;
+
+  const capitalRenovacion = capitalInvertido + interesGanado + reajusteGanado;
+  console.log(`Capital Renovación calculado: ${capitalRenovacion}`);
+
+  document.getElementById("capital_renovacion").value =
+    capitalRenovacion.toFixed(2);
+
+  updateTotalPagarRenovacion();
+}
+
+function updateTotalPagarRenovacion() {
+  const capitalRenovacion =
+    parseFloat(document.getElementById("capital_renovacion").value) || 0;
+  const tasaPeriodo =
+    parseFloat(document.getElementById("tasa_periodo").value) || 0;
+
+  const interesesGanados = capitalRenovacion * (tasaPeriodo / 100);
+  const totalPagar = capitalRenovacion + interesesGanados;
+
+  console.log(`Total a Pagar calculado: ${totalPagar}`);
+
+  document.getElementById("total_pagar_renovacion").value =
+    totalPagar.toFixed(2);
+}
+
+// monto;
+// interes_ganado;
+// reajuste_ganado;
+
+// capital_renovacion = monto + interes_ganado + reajuste_ganado;
+
+// tasa_periodo

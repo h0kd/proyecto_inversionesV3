@@ -6,10 +6,18 @@
   <title>Editar Depósito a Plazo</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <script src="{{ url_for('static', filename='js/toggleRenovable.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/formularioDeposito.js') }}"></script>
 </head>
 <body class="centered-form">
   <form action="{{ url_for('deposito_a_plazo.edit_deposito', id_deposito=deposito[0]) }}" method="POST" enctype="multipart/form-data">
     <h1>Editar Depósito a Plazo</h1>
+
+    <!-- Campo oculto para el ID original -->
+    <input
+    type="hidden"
+    name="original_id_deposito"
+    value="{{ deposito[0] }}"
+    />
   
     <label for="id_deposito">N° Depósito:</label>
     <input
@@ -55,11 +63,11 @@
     <br /><br />
     
     <label for="monto">Capital Invertido:</label>
-    <input type="number" step="0.01" id="monto" name="monto" value="{{ deposito[6] }}" required />
+    <input type="number" step="0.01" id="monto" name="monto" value="{{ deposito[6] | int if deposito[6] else '' }}" onchange="updateCapitalRenovacion()" required />
     <br /><br />
     
     <label for="fecha_emision">Fecha de Emisión:</label>
-    <input type="date" id="fecha_emision" name="fecha_emision" value="{{ deposito[3] }}" required />
+    <input type="date" id="fecha_emision" name="fecha_emision" value="{{ deposito[3] }}" onchange="calculatePlazoRenovacion()" required />
     <br /><br />
     
     <label for="tasa_interes">Tasa de Interés:</label>
@@ -67,7 +75,7 @@
     <br /><br />
     
     <label for="fecha_vencimiento">Fecha de Vencimiento:</label>
-    <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" value="{{ deposito[4] }}" required />
+    <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" value="{{ deposito[4] }}" onchange="calculatePlazoRenovacion()" required />
     <br /><br />
     
     <label for="interes_ganado">Interés Ganado:</label>
@@ -76,20 +84,21 @@
     step="0.01"
     id="interes_ganado"
     name="interes_ganado"
-    value="{{ deposito[8] or '' }}"
+    value="{{ deposito[8] | int if deposito[8] else '' }}"
+    onchange="updateCapitalRenovacion(); updateTotalPagarRenovacion();"
     required
     />
     <br /><br />
     
     <label for="reajuste_ganado">Reajuste Ganado:</label>
-    <input type="number" step="0.01" id="reajuste_ganado" name="reajuste_ganado" value="{{ deposito[10] }}"><br><br>
+    <input type="number" step="0.01" id="reajuste_ganado" name="reajuste_ganado" value="{{ deposito[10] | int if deposito[10] else '' }}" onchange="updateCapitalRenovacion(); updateTotalPagarRenovacion();"><br><br>
   
     <!-- Campos adicionales para Renovable -->
     <fieldset id="renovable-fields" style="display: none; border: 1px solid #ccc; padding: 10px">
       <legend>Condiciones de Renovación</legend>
   
       <label for="capital_renovacion">Capital a Invertir:</label>
-      <input type="number" step="0.01" id="capital_renovacion" name="capital_renovacion" value="{{ deposito[11] or '' }}" />
+      <input type="number" step="0.01" id="capital_renovacion" name="capital_renovacion" value="{{ deposito[11] or '' }}" onchange="updateTotalPagarRenovacion()" readonly />
       <br /><br />
   
       <label for="fecha_emision_renovacion">Fecha de Emisión:</label>
@@ -105,7 +114,7 @@
       <br /><br />
   
       <label for="tasa_periodo">Tasa de Interés del Período:</label>
-      <input type="number" step="0.001" id="tasa_periodo" name="tasa_periodo" value="{{ deposito[15] or '' }}" />
+      <input type="number" step="0.001" id="tasa_periodo" name="tasa_periodo" value="{{ deposito[15] or '' }}" onchange="updateTotalPagarRenovacion()" />
       <br /><br />
   
       <label for="fecha_vencimiento_renovacion">Fecha de Vencimiento:</label>
@@ -113,7 +122,7 @@
       <br /><br />
   
       <label for="total_pagar_renovacion">Total a Pagar:</label>
-      <input type="number" step="0.01" id="total_pagar_renovacion" name="total_pagar_renovacion" value="{{ deposito[17] or '' }}" />
+      <input type="number" step="0.01" id="total_pagar_renovacion" name="total_pagar_renovacion" value="{{ deposito[17] or '' }}" readonly />
       <br /><br />
     </fieldset>
   

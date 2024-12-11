@@ -77,7 +77,7 @@
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
               >
-                Configuración
+                Ingresos
               </a>
               <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                 <li><a class="dropdown-item" href="/bancos">Bancos</a></li>
@@ -105,14 +105,14 @@
     <!-- Formulario de Búsqueda -->
     <div class="search-bar ms-3">
       <form method="get" action="/acciones">
-        <label for="search_factura">Buscar por N° Factura:</label>
+        <!-- <label for="search_factura">Buscar por N° Factura:</label>
         <input
           type="text"
           id="search_factura"
           name="search_factura"
           value="{{ search_factura }}"
           placeholder="Número de Factura"
-        />
+        /> -->
 
         <label for="search_ticker">Buscar por Ticker:</label>
         <input
@@ -125,8 +125,13 @@
 
         <button type="submit" class="btn btn-primary">Buscar</button>
       </form>
-      <a href="/acciones_rendimiento">
+
+      <!-- <a href="/acciones_rendimiento">
         <button class="btn btn-primary">Ver Gráfico de Rendimiento</button>
+      </a> -->
+
+      <a class="nav-link" href="/listado_facturas">
+        <button class="btn btn-info">Facturas</button>
       </a>
     </div>
 
