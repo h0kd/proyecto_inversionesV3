@@ -121,6 +121,12 @@
           </th>
           <th>
             <a
+              href="?sort_by=NombreEntidad&order={{ 'asc' if sort_by != 'NombreEntidad' or order == 'desc' else 'desc' }}"
+              >Corredora</a
+            >
+          </th>
+          <th>
+            <a
               href="?sort_by=NombreActivo&order={{ 'asc' if sort_by != 'NombreActivo' or order == 'desc' else 'desc' }}"
               >Nombre Activo</a
             >
@@ -168,19 +174,20 @@
       <tbody>
         {% for factura in facturas %}
         <tr>
-          <td>{{ factura[0] }}</td>
-          <td>{{ factura[1] }}</td>
-          <td>{{ factura[2] }}</td>
-          <td>{{ factura[3] }}</td>
-          <td>{{ factura[4] }}</td>
-          <td>{{ factura[5] }}</td>
-          <td>{{ "{:,.2f}".format(factura[6]).replace(',', '.') }}</td>
-          <td>{{ "{:,.0f}".format(factura[7]).replace(',', '.') }}</td>
-          <td>{{ "{:,.0f}".format(factura[8]).replace(',', '.') }}</td>
+          <td>{{ factura[0] }}</td> <!-- Número de Factura -->
+          <td>{{ factura[1] }}</td> <!-- Nombre de la Empresa Emisora -->
+          <td>{{ factura[2] }}</td> <!-- Corredora -->
+          <td>{{ factura[3] }}</td> <!-- Nombre Activo -->
+          <td>{{ factura[4] }}</td> <!-- Tipo -->
+          <td>{{ factura[5] }}</td> <!-- Fecha -->
+          <td>{{ "{:,.2f}".format(factura[6]).replace(',', '.') }}</td> <!-- Cantidad -->
+          <td>{{ "{:,.2f}".format(factura[7]).replace(',', '.') }}</td> <!-- Precio Unitario -->
+          <td>{{ "{:,.2f}".format(factura[8]).replace(',', '.') }}</td> <!-- Sub Total -->
+          <td>{{ "{:,.2f}".format(factura[9]).replace(',', '.') }}</td> <!-- Valor Total -->
           <td>
-            {% if factura[9] %}
+            {% if factura[10] %}
             <a
-              href="{{ factura[9] | replace('\\', '/') }}"
+              href="{{ factura[10] | replace('\\', '/') }}"
               target="_blank"
               class="view-file"
               title="Abrir archivo PDF"
@@ -210,6 +217,7 @@
         {% endfor %}
       </tbody>
     </table>
+    
 
     <br />
     <a href="/">

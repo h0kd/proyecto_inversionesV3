@@ -13,20 +13,14 @@ facturas_bp = Blueprint('facturas', __name__)
 @facturas_bp.route('/add_factura', methods=['GET', 'POST'])
 @login_required
 def add_factura():
+    conn = get_db_connection()
+    cursor = conn.cursor()
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
         if request.method == 'POST':
             try:
-                # Registra los datos recibidos del formulario
-                print("POST recibido: Procesando datos de la factura.")
-                print(f"Datos enviados: {request.form}")
-
-                # Recibir datos del formulario
                 numero_factura = request.form['numero_factura']
-                id_corredora = request.form.get('corredora')  # ID de la corredora seleccionada
-                id_empresa_emisora = request.form.get('empresa_emisora')  # ID de la empresa emisora seleccionada
+                id_corredora = request.form.get('corredora')  
+                id_empresa_emisora = request.form.get('empresa_emisora')  
                 nombre_activo = request.form['nombre_activo'].upper()
                 fecha = request.form['fecha']
                 tipo = request.form['tipo'].capitalize()
@@ -36,12 +30,6 @@ def add_factura():
                 valor_total = float(request.form['valor_total'])
                 comision = float(request.form.get('comision', 0))
                 gasto = float(request.form.get('gasto', 0))
-
-                # Validar que ambos select tengan valores
-                if not id_corredora or not id_empresa_emisora:
-                    flash("Por favor, seleccione una corredora y una empresa emisora.", "error")
-                    print("Error: No se seleccionaron todos los campos requeridos.")
-                    return redirect(url_for('facturas.add_factura'))
 
                 # Manejar archivo adjuntofactura
                 adjuntofactura = None
@@ -54,6 +42,16 @@ def add_factura():
                         os.makedirs(os.path.dirname(adjuntofactura_path), exist_ok=True)
                         file.save(adjuntofactura_path)
                         adjuntofactura = relative_path
+                        print(f"Archivo guardado correctamente: {adjuntofactura_path}")
+                    else:
+                        flash("El archivo no es válido. Por favor, seleccione un archivo permitido.", "error")
+                        print("Error: El archivo no es válido.")
+
+                # Validar que ambos select tengan valores
+                if not id_corredora or not id_empresa_emisora:
+                    flash("Por favor, seleccione una corredora y una empresa emisora.", "error")
+                    print("Error: No se seleccionaron todos los campos requeridos.")
+                    return redirect(url_for('facturas.add_factura'))
 
                 # Obtener ID de TipoInversion basado en el tipo
                 cursor.execute("SELECT ID FROM TipoInversion WHERE Nombre = %s", (tipo,))
@@ -66,7 +64,6 @@ def add_factura():
                 id_tipo_inversion = tipo_inversion_result[0]
 
                 # Insertar la factura en la base de datos
-                print("Intentando insertar la factura en la base de datos.")
                 cursor.execute("""
                     INSERT INTO Facturas 
                     (NumeroFactura, ID_Entidad, ID_Entidad_Comercial, Fecha, Tipo, Cantidad, PrecioUnitario, SubTotal, Valor, NombreActivo, Comision, Gasto, AdjuntoFactura, ID_TipoInversion, Tipo_Entidad)
@@ -76,30 +73,37 @@ def add_factura():
                     subtotal, valor_total, nombre_activo, comision, gasto, adjuntofactura, id_tipo_inversion, 'EntidadComercial'
                 ))
                 conn.commit()
-                print("Factura insertada exitosamente.")
-
                 flash("Factura agregada exitosamente.", "success")
                 return redirect(url_for('facturas.listado_facturas'))
 
             except Exception as e:
                 conn.rollback()
-                print(f"Error al agregar la factura: {e}")
                 flash(f"Error al agregar la factura: {e}", "error")
                 return redirect(url_for('facturas.add_factura'))
 
-        else:
-            print("GET recibido: Preparando el formulario para agregar factura.")
-            return render_template('facturas/add_factura.html')
+        # Método GET: Mostrar el formulario
+        print("GET recibido: Preparando el formulario para agregar factura.")
+        cursor.execute("SELECT ID_Entidad, Nombre FROM Entidad WHERE TipoEntidad = 'Corredor'")
+        corredoras = cursor.fetchall()
 
+        cursor.execute("SELECT ID_Entidad, Nombre FROM EntidadComercial WHERE TipoEntidad = 'Empresa'")
+        empresas_emisoras = cursor.fetchall()
+
+        return render_template(
+            'facturas/add_factura.html',
+            corredoras=corredoras,
+            empresas_emisoras=empresas_emisoras
+        )
     except Exception as e:
-        print(f"Error en la conexión o lógica general: {e}")
-        flash(f"Error en la conexión: {e}", "error")
+        print(f"Error general: {e}")
+        flash(f"Error en el sistema: {e}", "error")
         return redirect(url_for('facturas.listado_facturas'))
     finally:
         if 'cursor' in locals():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
 
 @facturas_bp.route('/listado_facturas', methods=['GET'])
 @login_required
@@ -118,24 +122,25 @@ def listado_facturas():
     cursor = conn.cursor()
 
     query = f"""
-        SELECT 
-            f.NumeroFactura, 
-            CASE 
-                WHEN f.tipo_entidad = 'Entidad' THEN e.Nombre
-                WHEN f.tipo_entidad = 'EntidadComercial' THEN ec.Nombre
-            END AS NombreEntidad, 
-            f.NombreActivo, 
-            f.Tipo,
-            f.Fecha, 
-            f.Cantidad, 
-            f.PrecioUnitario, 
-            f.SubTotal, 
-            f.Valor, 
-            f.AdjuntoFactura
-        FROM Facturas f
-        LEFT JOIN Entidad e ON f.ID_Entidad = e.ID_Entidad AND f.tipo_entidad = 'Entidad'
-        LEFT JOIN EntidadComercial ec ON f.ID_Entidad_Comercial = ec.ID_Entidad AND f.tipo_entidad = 'EntidadComercial'
-        ORDER BY {sort_by} {order};
+    SELECT 
+        f.NumeroFactura, 
+        CASE 
+            WHEN f.tipo_entidad = 'Entidad' THEN e.Nombre
+            WHEN f.tipo_entidad = 'EntidadComercial' THEN ec.Nombre
+        END AS NombreEntidad, 
+        (SELECT Nombre FROM Entidad WHERE ID_Entidad = f.ID_Entidad) AS Corredora, 
+        f.NombreActivo, 
+        f.Tipo,
+        f.Fecha, 
+        f.Cantidad, 
+        f.PrecioUnitario, 
+        f.SubTotal, 
+        f.Valor, 
+        f.AdjuntoFactura
+    FROM Facturas f
+    LEFT JOIN Entidad e ON f.ID_Entidad = e.ID_Entidad AND f.tipo_entidad = 'Entidad'
+    LEFT JOIN EntidadComercial ec ON f.ID_Entidad_Comercial = ec.ID_Entidad AND f.tipo_entidad = 'EntidadComercial'
+    ORDER BY {sort_by} {order};
     """
     try:
         cursor.execute(query)
