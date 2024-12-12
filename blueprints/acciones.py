@@ -114,7 +114,7 @@ def detalle_empresa(nombre_empresa):
         f.PrecioUnitario AS PrecioCompra,
         f.Valor AS ValorTotal,
         f.Comision AS Comision,
-        (
+        ROUND((
             SELECT 
                 SUM(f_interno.Valor) / SUM(f_interno.Cantidad)
             FROM Facturas f_interno
@@ -122,14 +122,18 @@ def detalle_empresa(nombre_empresa):
             WHERE 
                 f_interno.NombreActivo = f.NombreActivo
                 AND e_interno.Nombre = e.Nombre
-        ) AS PrecioPromedioCompra
+        ), 2) AS PrecioPromedioCompra,
+        COALESCE(ROUND((
+            SELECT 
+                SUM(d.valortotal)
+            FROM Dividendos d
+            WHERE d.id_accion = CAST(f.NombreActivo AS INTEGER)
+        ), 2), 0) AS DividendosTotales
     FROM Facturas f
     JOIN EntidadComercial e ON f.ID_Entidad_Comercial = e.ID_Entidad
-    WHERE e.Nombre = %s
+    WHERE e.Nombre = 'INNOVACIÓN EMPRESARIAL LTDA.'
     ORDER BY f.Fecha;
     """
-
-
     grafico_query = """
         SELECT
             f.NombreActivo AS Ticker,
@@ -155,6 +159,13 @@ def detalle_empresa(nombre_empresa):
     acciones_empresa = []
     grafico_data = []
     promedio_data = []
+    acciones_empresa = []
+    labels = []
+    data = []
+    promedio_labels = []
+    grafico_labels = []
+    grafico_data_values = []
+
     try:
         cursor.execute(acciones_query, (nombre_empresa,))
         acciones_empresa = cursor.fetchall()
@@ -176,9 +187,7 @@ def detalle_empresa(nombre_empresa):
     except Exception as e:
         print(f"Error al obtener las acciones de la empresa '{nombre_empresa}': {e}")
         flash(f"Error al obtener las acciones de la empresa '{nombre_empresa}'.", "error")
-        acciones_empresa = []
-        labels = []
-        data = []
+        
     finally:
         cursor.close()
         conn.close()

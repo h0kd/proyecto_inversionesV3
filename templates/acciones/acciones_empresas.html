@@ -102,34 +102,30 @@
 						<th scope="col">Comisión</th>
 						<th scope="col">Promedio Compra</th>
 						<th scope="col">Valor Total</th>
+            <th scope="col">Dividendos</th>
 					</tr>
 				</thead>
 				<tbody>
-					{% if acciones_empresa %} {% for accion in acciones_empresa %}
-					<tr>
-						<td>{{ accion[0] }}</td>
-						<!-- Ticker -->
-						<td>{{ accion[1] }}</td>
-						<!-- Fecha de Compra -->
-						<td>{{ accion[2] }}</td>
-						<!-- Cantidad -->
-						<td>{{ "{:,.2f}".format(accion[3]).replace(',', '.') }}</td>
-						<!-- Precio Unitario -->
-						<td>{{ "{:,.2f}".format(accion[5]).replace(',', '.') }}</td>
-						<!-- Comisión -->
-						<td>{{ "{:,.2f}".format(accion[6]).replace(',', '.') }}</td>
-						<!-- Promedio Compra -->
-						<td>{{ "{:,.2f}".format(accion[4]).replace(',', '.') }}</td>
-						<!-- Valor Total -->
-					</tr>
-					{% endfor %} {% else %}
-					<tr>
-						<td colspan="6" class="text-center">
-							No hay acciones registradas para esta empresa.
-						</td>
-					</tr>
-					{% endif %}
-				</tbody>
+          {% if acciones_empresa %}
+              {% for accion in acciones_empresa %}
+              <tr>
+                  <td>{{ accion[0] }}</td>
+                  <td>{{ accion[1] }}</td>
+                  <td>{{ accion[2] }}</td>
+                  <td>{{ accion[3] }}</td>
+                  <td>{{ accion[5] }}</td>
+                  <td>{{ accion[6] }}</td>
+                  <td>{{ accion[4] }}</td>
+                  <td>{{ accion[7] }}</td>
+              </tr>
+              {% endfor %}
+          {% else %}
+              <tr>
+                  <td colspan="8">No hay acciones registradas para esta empresa.</td>
+              </tr>
+          {% endif %}
+      </tbody>
+      
 			</table>
 
             <div class="d-flex">
