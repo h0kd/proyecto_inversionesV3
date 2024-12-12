@@ -103,18 +103,18 @@
       <thead>
         <tr>
           <th scope="col">#</th>
-          <th scope="col">Nombre de la Entidad</th>
+          <th scope="col">Empresa</th>
           <th scope="col">RUT</th>
           <th scope="col">Cantidad Total</th>
         </tr>
       </thead>
       <tbody>
-        {% for idx, accion in enumerate(acciones, start=1) %}
+        {% for accion in acciones %}
         <tr>
-          <th scope="row">{{ idx }}</th>
-          <td>{{ accion[0] }}</td> <!-- Nombre de la Entidad -->
-          <td>{{ accion[1] }}</td> <!-- RUT -->
-          <td>{{ accion[2] }}</td> <!-- Cantidad Total -->
+          <th scope="row">{{ accion[0] }}</th> <!-- Índice -->
+          <td>{{ accion[1] }}</td> <!-- Nombre de la Entidad -->
+          <td>{{ accion[2] }}</td> <!-- RUT -->
+          <td>{{ accion[3] }}</td> <!-- Cantidad Total -->
         </tr>
         {% endfor %}
       </tbody>

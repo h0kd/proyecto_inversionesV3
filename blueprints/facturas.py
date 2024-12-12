@@ -25,8 +25,8 @@ def add_factura():
 
                 # Recibir datos del formulario
                 numero_factura = request.form['numero_factura']
-                tipo_entidad = request.form['tipo_entidad']
-                id_entidad = request.form['nombre_entidad']  # ID de la entidad seleccionada
+                id_corredora = request.form.get('corredora')  # ID de la corredora seleccionada
+                id_empresa_emisora = request.form.get('empresa_emisora')  # ID de la empresa emisora seleccionada
                 nombre_activo = request.form['nombre_activo'].upper()
                 fecha = request.form['fecha']
                 tipo = request.form['tipo'].capitalize()
@@ -37,34 +37,23 @@ def add_factura():
                 comision = float(request.form.get('comision', 0))
                 gasto = float(request.form.get('gasto', 0))
 
-                # Manejar archivo adjunto
-                archivo = request.files['archivo_factura']
-                if archivo and allowed_file(archivo.filename):
-                    filename = secure_filename(archivo.filename)
-                    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-                    file_path = file_path.replace("\\", "/")
-                    archivo.save(file_path)
-                    print(f"Archivo guardado en: {file_path}")
-                else:
-                    flash("Error: Archivo no válido o no seleccionado.", "error")
-                    print("Error en el archivo: Archivo no válido o no seleccionado.")
+                # Validar que ambos select tengan valores
+                if not id_corredora or not id_empresa_emisora:
+                    flash("Por favor, seleccione una corredora y una empresa emisora.", "error")
+                    print("Error: No se seleccionaron todos los campos requeridos.")
                     return redirect(url_for('facturas.add_factura'))
 
-                # Determinar dónde guardar el ID y el valor de `tipo_entidad`
-                id_entidad_val = None
-                id_entidad_comercial_val = None
-                tipo_entidad_factura = None
-
-                if tipo_entidad in ['Banco', 'Compania', 'Corredor']:
-                    id_entidad_val = id_entidad
-                    tipo_entidad_factura = 'Entidad'
-                elif tipo_entidad in ['Cliente', 'Empresa']:
-                    id_entidad_comercial_val = id_entidad
-                    tipo_entidad_factura = 'EntidadComercial'
-                else:
-                    flash("Tipo de entidad no válido.", "error")
-                    print(f"Error: Tipo de entidad no válido - {tipo_entidad}")
-                    return redirect(url_for('facturas.add_factura'))
+                # Manejar archivo adjuntofactura
+                adjuntofactura = None
+                if 'adjuntofactura' in request.files and request.files['adjuntofactura'].filename != '':
+                    file = request.files['adjuntofactura']
+                    if file and allowed_file(file.filename):
+                        filename = secure_filename(file.filename)
+                        relative_path = os.path.join('static', 'uploads', filename)
+                        adjuntofactura_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                        os.makedirs(os.path.dirname(adjuntofactura_path), exist_ok=True)
+                        file.save(adjuntofactura_path)
+                        adjuntofactura = relative_path
 
                 # Obtener ID de TipoInversion basado en el tipo
                 cursor.execute("SELECT ID FROM TipoInversion WHERE Nombre = %s", (tipo,))
@@ -83,8 +72,8 @@ def add_factura():
                     (NumeroFactura, ID_Entidad, ID_Entidad_Comercial, Fecha, Tipo, Cantidad, PrecioUnitario, SubTotal, Valor, NombreActivo, Comision, Gasto, AdjuntoFactura, ID_TipoInversion, Tipo_Entidad)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
                 """, (
-                    numero_factura, id_entidad_val, id_entidad_comercial_val, fecha, tipo, cantidad, precio_unitario,
-                    subtotal, valor_total, nombre_activo, comision, gasto, file_path, id_tipo_inversion, tipo_entidad_factura
+                    numero_factura, id_corredora, id_empresa_emisora, fecha, tipo, cantidad, precio_unitario,
+                    subtotal, valor_total, nombre_activo, comision, gasto, adjuntofactura, id_tipo_inversion, 'EntidadComercial'
                 ))
                 conn.commit()
                 print("Factura insertada exitosamente.")
@@ -100,22 +89,8 @@ def add_factura():
 
         else:
             print("GET recibido: Preparando el formulario para agregar factura.")
-            # Obtener las opciones para el select de Tipo de Entidad y Nombre de Entidad
-            cursor.execute("SELECT DISTINCT TipoEntidad FROM Entidad")
-            tipos_entidad = cursor.fetchall()
+            return render_template('facturas/add_factura.html')
 
-            cursor.execute("SELECT ID_Entidad, Nombre FROM Entidad")
-            entidades = cursor.fetchall()
-
-            cursor.execute("SELECT ID_Entidad, Nombre FROM EntidadComercial")
-            entidades_comerciales = cursor.fetchall()
-
-            return render_template(
-                'facturas/add_factura.html',
-                tipos_entidad=tipos_entidad,
-                entidades=entidades,
-                entidades_comerciales=entidades_comerciales
-            )
     except Exception as e:
         print(f"Error en la conexión o lógica general: {e}")
         flash(f"Error en la conexión: {e}", "error")
@@ -287,39 +262,51 @@ def eliminar_factura(numero_factura):
 
     return redirect(url_for('facturas.listado_facturas'))
 
-@facturas_bp.route('/entidades_por_tipo/<tipo>', methods=['GET'])
+@facturas_bp.route('/entidades_corredor', methods=['GET'])
 @login_required
-def entidades_por_tipo(tipo):
+def entidades_corredor():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+        cursor.execute("SELECT ID_Entidad, Nombre FROM Entidad WHERE TipoEntidad = 'Corredor'")
+        corredores = cursor.fetchall()
 
-        if tipo in ['Banco', 'Corredor', 'Compania']:
-            # Consultar en la tabla Entidad
-            cursor.execute("""
-                SELECT ID_Entidad, Nombre 
-                FROM Entidad 
-                WHERE TipoEntidad = %s
-            """, (tipo,))
-        elif tipo in ['Empresa', 'Cliente']:
-            # Consultar en la tabla EntidadComercial
-            cursor.execute("""
-                SELECT ID_Entidad, Nombre 
-                FROM EntidadComercial 
-                WHERE TipoEntidad = %s
-            """, (tipo,))
-        else:
-            return jsonify({"error": "Tipo de entidad no válido"}), 400
+        if not corredores:
+            print("No se encontraron corredores en la base de datos.")
 
-        entidades = cursor.fetchall()
-
-        # Formatear como JSON
-        resultado = [{"id": entidad[0], "nombre": entidad[1]} for entidad in entidades]
+        resultado = [{"id": corredor[0], "nombre": corredor[1]} for corredor in corredores]
         return jsonify(resultado)
     except Exception as e:
+        print(f"Error al obtener corredoras: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
-        if cursor:
+        if 'cursor' in locals():
             cursor.close()
-        if conn:
+        if 'conn' in locals():
             conn.close()
+
+
+
+@facturas_bp.route('/entidades_empresa', methods=['GET'])
+@login_required
+def entidades_empresa():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT ID_Entidad, Nombre FROM EntidadComercial WHERE TipoEntidad = 'Empresa'")
+        empresas = cursor.fetchall()
+
+        if not empresas:
+            print("No se encontraron empresas emisoras en la base de datos.")
+
+        resultado = [{"id": empresa[0], "nombre": empresa[1]} for empresa in empresas]
+        return jsonify(resultado)
+    except Exception as e:
+        print(f"Error al obtener empresas emisoras: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
+
