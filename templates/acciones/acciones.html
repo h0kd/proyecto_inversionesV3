@@ -132,7 +132,7 @@
             {{ accion[1] }}
             </a>
           </td> <!-- Nombre de la Entidad -->
-          <td>{{ accion[2] }}</td> <!-- RUT -->
+          <td>{{ accion[2] | format_rut }}</td> <!-- RUT -->
           <td>{{ accion[3] }}</td> <!-- Cantidad Total -->
         </tr>
         {% endfor %}

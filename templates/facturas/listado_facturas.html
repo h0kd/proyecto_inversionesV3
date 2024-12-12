@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Listado de Facturas</title>
     <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/styles.css') }}"
-    />
-    <link
       href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap"
       rel="stylesheet"
     />
@@ -104,77 +100,77 @@
     </a>
     <br /> <br />
     <!-- Tabla Principal -->
-    <table border="1" cellpadding="5" cellspacing="0">
+    <table class="table table-dark table-striped">
       <thead>
         <tr>
-          <th>
+          <th scope="col">
             <a
-              href="?sort_by=NumeroFactura&order={{ 'asc' if sort_by != 'NumeroFactura' or order == 'desc' else 'desc' }}"
+              href="?sort_by=NumeroFactura&order={{ 'asc' if sort_by != 'NumeroFactura' or order == 'desc' else 'desc' }}" class="text-decoration-none text-light"
               >N° Factura</a
             >
           </th>
-          <th>
+          <th scope="col">
             <a
-              href="?sort_by=NombreEntidad&order={{ 'asc' if sort_by != 'NombreEntidad' or order == 'desc' else 'desc' }}"
+              href="?sort_by=NombreEntidad&order={{ 'asc' if sort_by != 'NombreEntidad' or order == 'desc' else 'desc' }}" class="text-decoration-none text-light"
               >Empresa Emisora</a
             >
           </th>
-          <th>
+          <th scope="col">
             <a
-              href="?sort_by=NombreEntidad&order={{ 'asc' if sort_by != 'NombreEntidad' or order == 'desc' else 'desc' }}"
+              href="?sort_by=NombreEntidad&order={{ 'asc' if sort_by != 'NombreEntidad' or order == 'desc' else 'desc' }}" class="text-decoration-none text-light"
               >Corredora</a
             >
           </th>
-          <th>
+          <th scope="col">
             <a
-              href="?sort_by=NombreActivo&order={{ 'asc' if sort_by != 'NombreActivo' or order == 'desc' else 'desc' }}"
+              href="?sort_by=NombreActivo&order={{ 'asc' if sort_by != 'NombreActivo' or order == 'desc' else 'desc' }}" class="text-decoration-none text-light"
               >Nombre Activo</a
             >
           </th>
           <th>
             <a
-              href="?sort_by=Tipo&order={{ 'asc' if sort_by != 'Tipo' or order == 'desc' else 'desc' }}"
+              href="?sort_by=Tipo&order={{ 'asc' if sort_by != 'Tipo' or order == 'desc' else 'desc' }}" class="text-decoration-none text-light"
               >Tipo</a
             >
-          </th>
+          </th scope="col">
           <th>
             <a
-              href="?sort_by=Fecha&order={{ 'asc' if sort_by != 'Fecha' or order == 'desc' else 'desc' }}"
+              href="?sort_by=Fecha&order={{ 'asc' if sort_by != 'Fecha' or order == 'desc' else 'desc' }}" class="text-decoration-none text-light"
               >Fecha</a
             >
           </th>
-          <th>
+          <th scope="col">
             <a
-              href="?sort_by=Cantidad&order={{ 'asc' if sort_by != 'Cantidad' or order == 'desc' else 'desc' }}"
+              href="?sort_by=Cantidad&order={{ 'asc' if sort_by != 'Cantidad' or order == 'desc' else 'desc' }}" class="text-decoration-none text-light"
               >Cantidad</a
             >
           </th>
-          <th>
+          <th scope="col">
             <a
-              href="?sort_by=PrecioUnitario&order={{ 'asc' if sort_by != 'PrecioUnitario' or order == 'desc' else 'desc' }}"
+              href="?sort_by=PrecioUnitario&order={{ 'asc' if sort_by != 'PrecioUnitario' or order == 'desc' else 'desc' }}" class="text-decoration-none text-light"
               >Precio Unitario</a
             >
           </th>
-          <th>
+          <th scope="col">
             <a
-              href="?sort_by=SubTotal&order={{ 'asc' if sort_by != 'SubTotal' or order == 'desc' else 'desc' }}"
+              href="?sort_by=SubTotal&order={{ 'asc' if sort_by != 'SubTotal' or order == 'desc' else 'desc' }}" class="text-decoration-none text-light"
               >Sub Total</a
             >
           </th>
-          <th>
+          <th scope="col">
             <a
-              href="?sort_by=Valor&order={{ 'asc' if sort_by != 'Valor' or order == 'desc' else 'desc' }}"
+              href="?sort_by=Valor&order={{ 'asc' if sort_by != 'Valor' or order == 'desc' else 'desc' }}" class="text-decoration-none text-light"
               >Valor Total</a
             >
           </th>
-          <th>Factura</th>
-          <th>Acciones</th>
+          <th scope="col">Factura</th>
+          <th scope="col">Acciones</th>
         </tr>
       </thead>
       <tbody>
         {% for factura in facturas %}
         <tr>
-          <td>{{ factura[0] }}</td> <!-- Número de Factura -->
+          <td scope="row">{{ factura[0] }}</td> <!-- Número de Factura -->
           <td>{{ factura[1] }}</td> <!-- Nombre de la Empresa Emisora -->
           <td>{{ factura[2] }}</td> <!-- Corredora -->
           <td>{{ factura[3] }}</td> <!-- Nombre Activo -->
@@ -189,7 +185,7 @@
             <a
               href="{{ factura[10] | replace('\\', '/') }}"
               target="_blank"
-              class="view-file"
+              class="view-file text-decoration-none text-light"
               title="Abrir archivo PDF"
               ><i class="fa-solid fa-file-pdf"></i
             ></a>
@@ -198,7 +194,7 @@
           <td>
             <a
               href="/edit_factura/{{ factura[0] }}"
-              class="edit-action"
+              class="edit-action text-decoration-none text-light"
               title="Editar Factura"
             >
               <i class="fa-solid fa-edit"></i> Editar
@@ -206,7 +202,7 @@
             |
             <a
               href="/eliminar_factura/{{ factura[0] }}"
-              class="delete-action"
+              class="delete-action text-decoration-none text-light"
               title="Eliminar Factura"
               onclick="return confirm('¿Está seguro de eliminar esta factura?');"
             >
@@ -220,8 +216,8 @@
     
 
     <br />
-    <a href="/">
-      <button class="btn btn-primary mx-3">Volver al inicio</button>
+    <a href="/acciones">
+      <button class="btn btn-primary mx-3">Volver</button>
     </a>
   </body>
 </html>

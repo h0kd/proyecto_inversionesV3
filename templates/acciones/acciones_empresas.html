@@ -15,9 +15,13 @@
 		<script>
 			window.chartLabels = {{ grafico_labels | tojson | safe }};
 			window.chartData = {{ grafico_data_values | tojson | safe }};
+            
+			window.promedioLabels = {{ promedio_labels | tojson | safe }};
+			window.promedioData = {{ promedio_data | tojson | safe }};
 		</script>
 		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 		<script src="{{ url_for('static', filename='js/accionesEmpresasChart.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/accionesPromedioCompraChart.js') }}"></script>
 	</head>
 	<body>
 		<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -128,10 +132,17 @@
 				</tbody>
 			</table>
 
-			<div class="chart-container text-center">
-				<h2>Acciones Suma Total</h2>
-				<canvas id="accionesEmpresasChart"></canvas>
-			</div>
+            <div class="d-flex">
+                <div class="chart-container text-center">
+                    <h2>Suma Total</h2>
+                    <canvas id="accionesEmpresasChart"></canvas>
+                </div>
+
+                <div class="chart-container text-center">
+                    <h2>Promedio Compra</h2>
+                    <canvas id="accionesPromedioCompraChart"></canvas>
+                </div>
+            </div>
 
 			<a href="/acciones" class="btn btn-primary mt-3">Volver</a>
 		</div>

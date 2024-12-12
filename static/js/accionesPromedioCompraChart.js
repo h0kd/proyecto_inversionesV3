@@ -1,14 +1,14 @@
 document.addEventListener("DOMContentLoaded", function () {
 	// Asegúrate de que estas variables estén definidas en tu HTML
-	const chartLabels = window.chartLabels || [];
-	const chartData = window.chartData || [];
+	const promedioLabels = window.promedioLabels || [];
+	const promedioData = window.promedioData || [];
 
 	const data = {
-		labels: chartLabels,
+		labels: promedioLabels,
 		datasets: [
 			{
-				label: "Suma Total",
-				data: chartData,
+				label: "Promedio Compra",
+				data: promedioData,
 				backgroundColor: [
 					"rgba(255, 99, 132, 0.6)",
 					"rgba(54, 162, 235, 0.6)",
@@ -41,15 +41,15 @@ document.addEventListener("DOMContentLoaded", function () {
 				},
 				title: {
 					display: true,
-					text: "Suma Total",
+					text: "Promedio Compra",
 				},
 			},
 		},
 	};
 
 	// Renderizar el gráfico
-	const accionesEmpresasChart = new Chart(
-		document.getElementById("accionesEmpresasChart"),
+	const accionesPromedioCompraChart = new Chart(
+		document.getElementById("accionesPromedioCompraChart"),
 		config
 	);
 });

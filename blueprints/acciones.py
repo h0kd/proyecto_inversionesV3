@@ -76,6 +76,28 @@ def acciones():
     return render_template('acciones/acciones.html', acciones=acciones_con_indices, total_dinero=total_dinero, labels=labels, data=data)
 
 
+def format_rut(rut):
+    # Convertir el RUT a string, quitar puntos y guión si existen
+    rut = str(rut).replace(".", "").replace("-", "")
+
+    if len(rut) < 2:  # Validar que el RUT tiene al menos dos caracteres
+        return rut
+
+    # Formatear: separar el dígito verificador (último dígito)
+    cuerpo = rut[:-1]
+    dv = rut[-1]
+
+    # Agregar puntos cada tres dígitos, desde el final
+    cuerpo_formateado = "{:,}".format(int(cuerpo)).replace(",", ".")
+
+    # Retornar el RUT en el formato esperado
+    return f"{cuerpo_formateado}-{dv}"
+
+@acciones_bp.app_template_filter('format_rut')
+def format_rut_filter(rut):
+    return format_rut(rut)
+
+
 @acciones_bp.route('/empresa/<nombre_empresa>', methods=['GET'])
 @login_required
 def detalle_empresa(nombre_empresa):
@@ -85,26 +107,28 @@ def detalle_empresa(nombre_empresa):
 
     # Consulta para obtener las acciones relacionadas con la empresa seleccionada y el promedio ponderado
     acciones_query = """
-        SELECT 
-            f.NombreActivo AS Ticker,
-            f.Fecha AS FechaCompra,
-            f.Cantidad AS CantidadAcciones,
-            f.PrecioUnitario AS PrecioCompra,
-            f.Valor AS ValorTotal,
-            f.Comision AS Comision,
-            promedio_compra.PrecioPromedioCompra
-        FROM Facturas f
-        JOIN EntidadComercial e ON f.ID_Entidad_Comercial = e.ID_Entidad
-        LEFT JOIN (
+    SELECT 
+        f.NombreActivo AS Ticker,
+        f.Fecha AS FechaCompra,
+        f.Cantidad AS CantidadAcciones,
+        f.PrecioUnitario AS PrecioCompra,
+        f.Valor AS ValorTotal,
+        f.Comision AS Comision,
+        (
             SELECT 
-                NombreActivo, 
-                SUM(Valor) / SUM(Cantidad) AS PrecioPromedioCompra
-            FROM Facturas
-            GROUP BY NombreActivo
-        ) AS promedio_compra ON f.NombreActivo = promedio_compra.NombreActivo
-        WHERE e.Nombre = %s
-        ORDER BY f.Fecha;
+                SUM(f_interno.Valor) / SUM(f_interno.Cantidad)
+            FROM Facturas f_interno
+            JOIN EntidadComercial e_interno ON f_interno.ID_Entidad_Comercial = e_interno.ID_Entidad
+            WHERE 
+                f_interno.NombreActivo = f.NombreActivo
+                AND e_interno.Nombre = e.Nombre
+        ) AS PrecioPromedioCompra
+    FROM Facturas f
+    JOIN EntidadComercial e ON f.ID_Entidad_Comercial = e.ID_Entidad
+    WHERE e.Nombre = %s
+    ORDER BY f.Fecha;
     """
+
 
     grafico_query = """
         SELECT
@@ -116,9 +140,21 @@ def detalle_empresa(nombre_empresa):
         GROUP BY f.NombreActivo
         ORDER BY TotalInvertido DESC;
     """
+
+    promedio_query = """
+    SELECT 
+        f.NombreActivo AS Ticker,
+        SUM(f.Valor) / SUM(f.Cantidad) AS PromedioCompra
+    FROM Facturas f
+    JOIN EntidadComercial e ON f.ID_Entidad_Comercial = e.ID_Entidad
+    WHERE e.Nombre = %s
+    GROUP BY f.NombreActivo
+    ORDER BY Ticker;
+    """
     
     acciones_empresa = []
     grafico_data = []
+    promedio_data = []
     try:
         cursor.execute(acciones_query, (nombre_empresa,))
         acciones_empresa = cursor.fetchall()
@@ -126,8 +162,17 @@ def detalle_empresa(nombre_empresa):
         cursor.execute(grafico_query, (nombre_empresa,))
         grafico_data = cursor.fetchall()
 
+        cursor.execute(promedio_query, (nombre_empresa,))
+        promedio_data = cursor.fetchall()
+
         labels = [accion[0] for accion in acciones_empresa]
         data = [accion[4] for accion in acciones_empresa]
+
+        grafico_labels = [row[0] for row in grafico_data]
+        grafico_data_values = [row[1] for row in grafico_data]
+
+        promedio_labels = [promedio[0] for promedio in promedio_data]
+        promedio_data = [promedio[1] for promedio in promedio_data]
     except Exception as e:
         print(f"Error al obtener las acciones de la empresa '{nombre_empresa}': {e}")
         flash(f"Error al obtener las acciones de la empresa '{nombre_empresa}'.", "error")
@@ -138,13 +183,10 @@ def detalle_empresa(nombre_empresa):
         cursor.close()
         conn.close()
 
-    grafico_labels = [row[0] for row in grafico_data]
-    grafico_data_values = [row[1] for row in grafico_data]
-
     return render_template(
         'acciones/acciones_empresas.html',
         nombre_empresa=nombre_empresa,
-        acciones_empresa=acciones_empresa, labels=labels, data=data, grafico_labels=grafico_labels, grafico_data_values=grafico_data_values
+        acciones_empresa=acciones_empresa, labels=labels, data=data, grafico_labels=grafico_labels, grafico_data_values=grafico_data_values, promedio_labels=promedio_labels, promedio_data=promedio_data
     )
 
 
