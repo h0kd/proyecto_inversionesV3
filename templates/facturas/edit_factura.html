@@ -22,7 +22,7 @@
     />
   </head>
   <body class="centered-form">
-    <form method="POST">
+    <form method="POST" action="{{ url_for('facturas.editar_factura', numero_factura=factura[0]) }}">
       <h1>Editar Factura</h1>
       <label for="numero_actual">Número Actual de Factura:</label>
       <input
@@ -44,20 +44,24 @@
         oninput="this.value = this.value.replace(/[^0-9]/g, '');"
       /><br /><br />
 
-      <label for="tipo_entidad">Tipo de Entidad:</label>
-      <select id="tipo_entidad" name="tipo_entidad" required onchange="cargarEntidades(this.value)">
-        <option value="" disabled selected>Seleccione el tipo de entidad</option>
-        {% for tipo in tipos_entidad %}
-        <option value="{{ tipo }}" {% if tipo == factura[7] %}selected{% endif %}>{{ tipo }}</option>
+      <label for="corredora">Corredora:</label>
+      <select id="corredora" name="corredora" required>
+        <option value="" disabled>Seleccione una corredora</option>
+        {% for corredor in corredores %}
+        <option value="{{ corredor[0] }}" {% if factura[12] == corredor[0] %}selected{% endif %}>
+          {{ corredor[1] }}
+        </option>
         {% endfor %}
       </select>
       <br /><br />
-
-      <label for="nombre_entidad">Nombre de la Entidad:</label>
-      <select id="nombre_entidad" name="nombre_entidad" required>
-        {% for entidad in entidades %}
-        <option value="{{ entidad[0] }}" {% if entidad[0] == factura[8] %}selected{% endif %}>
-          {{ entidad[1] }}
+    
+      <!-- Select para Empresa Emisora -->
+      <label for="empresa_emisora">Empresa Emisora:</label>
+      <select id="empresa_emisora" name="empresa_emisora" required>
+        <option value="" disabled>Seleccione una empresa emisora</option>
+        {% for empresa in empresas %}
+        <option value="{{ empresa[0] }}" {% if factura[13] == empresa[0] %}selected{% endif %}>
+          {{ empresa[1] }}
         </option>
         {% endfor %}
       </select>

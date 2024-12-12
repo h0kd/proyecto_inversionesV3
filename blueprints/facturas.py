@@ -166,8 +166,6 @@ def editar_factura(numero_factura):
             try:
                 # Recibir datos del formulario
                 nuevo_numero_factura = request.form['nuevo_numero']
-                tipo_entidad = request.form['tipo_entidad']
-                id_entidad = request.form['nombre_entidad']  # ID seleccionada
                 nombre_activo = request.form['nombre_activo']
                 tipo = request.form['tipo']
                 fecha = request.form['fecha']
@@ -177,29 +175,16 @@ def editar_factura(numero_factura):
                 gasto = float(request.form.get('gasto', 0))
                 subtotal = cantidad * precio_unitario
                 valor_total = float(request.form['valor_total'])
-                
+                id_corredora = request.form.get('corredora')  
+                id_empresa_emisora = request.form.get('empresa_emisora') 
 
-                # Determinar valores según el tipo de entidad
-                tipo_entidad_factura = None
-                id_entidad_val = None
-                id_entidad_comercial_val = None
-
-                if tipo_entidad in ['Banco', 'Compania', 'Corredor']:
-                    tipo_entidad_factura = 'Entidad'
-                    id_entidad_val = id_entidad
-                elif tipo_entidad in ['Cliente', 'Empresa']:
-                    tipo_entidad_factura = 'EntidadComercial'
-                    id_entidad_comercial_val = id_entidad
-
-                print(tipo_entidad_factura)
-                # Actualizar la factura, incluyendo la columna `tipo_entidad`
                 cursor.execute("""
                     UPDATE Facturas
-                    SET NumeroFactura = %s, ID_Entidad = %s, ID_Entidad_Comercial = %s, Tipo_Entidad = %s, 
+                    SET NumeroFactura = %s, ID_Entidad = %s, ID_Entidad_Comercial = %s, Tipo_Entidad = 'EntidadComercial', 
                         NombreActivo = %s, Tipo = %s, Fecha = %s, Cantidad = %s, Comision = %s, Gasto = %s, PrecioUnitario = %s, SubTotal = %s, Valor = %s
                     WHERE NumeroFactura = %s
                 """, (
-                    nuevo_numero_factura, id_entidad_val, id_entidad_comercial_val, tipo_entidad_factura,
+                    nuevo_numero_factura, id_corredora, id_empresa_emisora, 
                     nombre_activo, tipo, fecha, cantidad, comision, gasto, precio_unitario, subtotal, valor_total, numero_factura
                 ))
                 conn.commit()
@@ -217,7 +202,7 @@ def editar_factura(numero_factura):
             cursor.execute("""
                 SELECT NumeroFactura, NombreActivo, Tipo, Fecha, Cantidad, Comision, Gasto, Tipo_Entidad, 
                        COALESCE(ID_Entidad, ID_Entidad_Comercial) AS ID_Entidad,
-                           PrecioUnitario, Valor, SubTotal
+                       PrecioUnitario, Valor, SubTotal, ID_Entidad, ID_Entidad_Comercial
                 FROM Facturas 
                 WHERE NumeroFactura = %s
             """, (numero_factura,))
@@ -227,31 +212,26 @@ def editar_factura(numero_factura):
                 flash("Factura no encontrada.", "error")
                 return redirect(url_for('facturas.listado_facturas'))
 
-            # Cargar tipos de entidad
-            cursor.execute("""
-                SELECT DISTINCT TipoEntidad FROM (
-                    SELECT TipoEntidad FROM Entidad
-                    UNION ALL
-                    SELECT TipoEntidad FROM EntidadComercial
-                ) subquery
-            """)
-            tipos_entidad = [row[0] for row in cursor.fetchall()]
+            # Obtener datos de Corredores y Empresas
+            cursor.execute("SELECT ID_Entidad, Nombre FROM Entidad WHERE TipoEntidad = 'Corredor'")
+            corredores = cursor.fetchall()
 
-            # Cargar entidades del tipo seleccionado
-            cursor.execute("""
-                SELECT ID_Entidad, Nombre FROM Entidad WHERE TipoEntidad = %s
-                UNION ALL
-                SELECT ID_Entidad, Nombre FROM EntidadComercial WHERE TipoEntidad = %s
-            """, (factura[7], factura[7]))
-            entidades = cursor.fetchall()
+            cursor.execute("SELECT ID_Entidad, Nombre FROM EntidadComercial WHERE TipoEntidad = 'Empresa'")
+            empresas = cursor.fetchall()
 
-            return render_template('facturas/edit_factura.html', factura=factura, tipos_entidad=tipos_entidad, entidades=entidades)
+            return render_template(
+                'facturas/edit_factura.html',
+                factura=factura,
+                corredores=corredores,
+                empresas=empresas
+            )
 
     finally:
         if 'cursor' in locals():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
 
 
 @facturas_bp.route('/eliminar_factura/<int:numero_factura>', methods=['POST', 'GET'])

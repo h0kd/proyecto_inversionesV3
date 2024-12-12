@@ -1,0 +1,5 @@
+.chart-container {
+	width: 400px; /* Ajusta el ancho deseado */
+	height: 400px; /* Ajusta el alto deseado */
+	margin: auto; /* Centra el gráfico */
+}

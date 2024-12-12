@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gestión de Acciones</title>
     <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/chartStyle.css') }}"
+    />
+    <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
       rel="stylesheet"
     />
@@ -25,6 +29,12 @@
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
       defer
     ></script>
+    <script>
+      const chartLabels = {{ labels|tojson|safe }};
+      const chartDataset = {{ data|tojson|safe }};
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/accionesChart.js') }}"></script>    
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -95,9 +105,14 @@
     </nav>
     <h1 class="ms-3">Acciones</h1>
 
-    <a class="nav-link" href="/listado_facturas">
-      <button class="btn btn-info ms-3">Facturas</button>
-    </a>
+    <div class="d-flex ms-3">
+      <a class="nav-link" href="/listado_facturas">
+        <button class="btn btn-info me-2">Facturas</button>
+      </a>
+      <a class="nav-link" href="/acciones_general">
+        <button class="btn btn-info me-2">General</button>
+      </a>
+    </div>
 
     <table class="table table-dark table-striped mt-3">
       <thead>
@@ -105,22 +120,44 @@
           <th scope="col">#</th>
           <th scope="col">Empresa</th>
           <th scope="col">RUT</th>
-          <th scope="col">Cantidad Total</th>
+          <th scope="col">Total Acciones</th>
         </tr>
       </thead>
       <tbody>
         {% for accion in acciones %}
         <tr>
           <th scope="row">{{ accion[0] }}</th> <!-- Índice -->
-          <td>{{ accion[1] }}</td> <!-- Nombre de la Entidad -->
+          <td>
+            <a href="{{ url_for('acciones.detalle_empresa', nombre_empresa=accion[1]) }}" class="text-decoration-none text-light">
+            {{ accion[1] }}
+            </a>
+          </td> <!-- Nombre de la Entidad -->
           <td>{{ accion[2] }}</td> <!-- RUT -->
           <td>{{ accion[3] }}</td> <!-- Cantidad Total -->
         </tr>
         {% endfor %}
       </tbody>
     </table>
-    
 
+    <table class="table table-dark table-striped mt-3">
+      <thead>
+        <tr>
+          <th scope="col">Total en Plata</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">{{ "{:,.2f}".format(total_dinero).replace(",", ".") }}</th> <!-- Índice -->
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="chart-container">
+      <h2>Monto Total por Empresa</h2>
+      <canvas id="accionesChart"></canvas>
+    </div>
+    
+    
     <a href="/"><button class="btn btn-primary ms-3">Volver al Inicio</button></a>
   </body>
 </html>
