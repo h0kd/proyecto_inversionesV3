@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, flash
+from flask import Blueprint, render_template, request, flash, url_for, redirect
 from flask_login import login_required
 from database import get_db_connection
 import pandas as pd
@@ -198,4 +198,93 @@ def detalle_empresa(nombre_empresa):
         acciones_empresa=acciones_empresa, labels=labels, data=data, grafico_labels=grafico_labels, grafico_data_values=grafico_data_values, promedio_labels=promedio_labels, promedio_data=promedio_data
     )
 
+@acciones_bp.route('/acciones_por_ticker/<nombre_empresa>/<ticker>', methods=['GET'])
+@login_required
+def acciones_por_ticker(nombre_empresa, ticker):
+    # Conectar a la base de datos
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    acciones = []
+    try:
+        # Consulta SQL para obtener las acciones del ticker
+        query = """
+        SELECT 
+            f.NumeroFactura, 
+            'Compra' AS Tipo,  -- Asignar un tipo fijo como ejemplo
+            f.Fecha AS FechaCompra, 
+            f.Cantidad AS CantidadAcciones, 
+            f.PrecioUnitario AS PrecioCompra, 
+            f.Comision AS Comision, 
+            (
+                SELECT 
+                    SUM(f_interno.Valor) / SUM(f_interno.Cantidad)
+                FROM Facturas f_interno
+                JOIN EntidadComercial e_interno ON f_interno.ID_Entidad_Comercial = e.interno.ID_Entidad
+                WHERE f_interno.NombreActivo = f.NombreActivo
+            ) AS PrecioPromedioCompra,
+            f.Valor AS ValorTotal
+        FROM Facturas f
+        JOIN EntidadComercial e ON f.ID_Entidad_Comercial = e.ID_Entidad
+        WHERE e.Nombre = %s AND f.NombreActivo = %s
+        ORDER BY f.Fecha;
+        """
+        cursor.execute(query, (nombre_empresa, ticker))
+        acciones = cursor.fetchall()
+    except Exception as e:
+        flash(f"Error al obtener acciones para el ticker {ticker}: {e}", "error")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return render_template(
+        'acciones/acciones_por_ticker.html',
+        nombre_empresa=nombre_empresa,
+        ticker=ticker,
+        acciones=acciones
+    )
+
+
+
+
+@acciones_bp.route('/add_dividendo/<ticker>/<nombre_empresa>', methods=['GET', 'POST'])
+@login_required
+def add_dividendo(ticker, nombre_empresa):
+    if request.method == 'POST':
+        # Obtener los datos del formulario
+        fechacierre = request.form['fecha_cierre']
+        fechapago = request.form['fecha_pago']
+        valorporaccion = float(request.form['valor_por_accion'])
+        moneda = request.form['moneda']
+
+        # El nombre del dividendo será el Ticker
+        nombre_dividendo = ticker
+
+        # Conectar a la base de datos
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        try:
+            # Insertar el dividendo en la base de datos
+            cursor.execute("""
+                INSERT INTO Dividendos (id_accion, nombre, fechacierre, fechapago, valorporaccion, moneda)
+                VALUES (
+                    (SELECT ID FROM Acciones WHERE NombreActivo = %s LIMIT 1),
+                    %s, %s, %s, %s, %s
+                )
+            """, (ticker, nombre_dividendo, fechacierre, fechapago, valorporaccion, moneda))
+            conn.commit()
+            flash(f"Dividendo agregado para {ticker} con éxito.", "success")
+        except Exception as e:
+            conn.rollback()
+            flash(f"Error al agregar dividendo: {e}", "error")
+        finally:
+            cursor.close()
+            conn.close()
+
+        # Redirigir a la vista de detalle de la empresa
+        return redirect(url_for('acciones.detalle_empresa', nombre_empresa=nombre_empresa))
+
+    # Renderizar la plantilla para agregar dividendos
+    return render_template('acciones/dividendos/add_dividendo.html', ticker=ticker, nombre_empresa=nombre_empresa)
 

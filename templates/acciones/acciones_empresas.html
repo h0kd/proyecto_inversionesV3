@@ -109,7 +109,11 @@
           {% if acciones_empresa %}
               {% for accion in acciones_empresa %}
               <tr>
-                  <td>{{ accion[0] }}</td>
+                  <td>
+                    <a href="{{ url_for('acciones.acciones_por_ticker', nombre_empresa=nombre_empresa, ticker=accion[0]) }}" class="text-decoration-none text-light">
+                        {{ accion[0] }}
+                    </a>
+                  </td> <!-- Ticker -->
                   <td>{{ accion[1] }}</td>
                   <td>{{ accion[2] }}</td>
                   <td>{{ accion[3] }}</td>
