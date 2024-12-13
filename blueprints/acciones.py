@@ -131,7 +131,8 @@ def detalle_empresa(nombre_empresa):
                     SUM(d.valortotal)
                 FROM Dividendos d
                 WHERE d.id_accion = a.id
-            ), 0) AS DividendosTotales
+            ), 0) AS DividendosTotales,
+            f.Tipo AS Tipo
         FROM Facturas f
         JOIN Acciones a ON f.id_accion = a.id
         WHERE a.Empresa = %s
