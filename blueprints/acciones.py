@@ -30,11 +30,13 @@ def acciones():
     # Consulta para calcular el total en dinero de todas las compras
     total_query = """
         SELECT 
-            SUM(f.Valor) AS TotalDinero
+            SUM(CASE WHEN f.Tipo = 'Compra' THEN f.Valor ELSE 0 END) AS TotalCompras,
+            SUM(CASE WHEN f.Tipo = 'Venta' THEN f.Valor ELSE 0 END) AS TotalVentas
         FROM Facturas f
         JOIN EntidadComercial e ON f.ID_Entidad_Comercial = e.ID_Entidad
         WHERE e.TipoEntidad = 'Empresa';
     """
+
 
     # Grafico
     grafico_query = """
@@ -43,7 +45,7 @@ def acciones():
             SUM(f.valor) as ValorTotal
         FROM Facturas f
         JOIN EntidadComercial e ON f.ID_Entidad_Comercial = e.ID_Entidad
-        WHERE e.TipoEntidad = 'Empresa'
+        WHERE e.TipoEntidad = 'Empresa' AND f.Tipo = 'Compra'
         GROUP BY e.Nombre
         ORDER BY e.Nombre;
     """
@@ -53,7 +55,9 @@ def acciones():
         acciones = cursor.fetchall()
 
         cursor.execute(total_query)
-        total_dinero = cursor.fetchone()[0] or 0
+        totals = cursor.fetchone()
+        total_compras = totals[0] or 0
+        total_ventas = totals[1] or 0
 
         cursor.execute(grafico_query)
         grafico_datos = cursor.fetchall()
@@ -61,7 +65,8 @@ def acciones():
         print(f"Error en las consultas: {e}")
         flash(f"Error al obtener las acciones: {e}", "error")
         acciones = []
-        total_dinero = 0
+        total_compras = 0
+        total_ventas = 0
         grafico_datos = []
 
     # Agregar índices
@@ -73,7 +78,7 @@ def acciones():
     labels = [dato[0] for dato in grafico_datos]
     data = [dato[1] for dato in grafico_datos]
 
-    return render_template('acciones/acciones.html', acciones=acciones_con_indices, total_dinero=total_dinero, labels=labels, data=data)
+    return render_template('acciones/acciones.html', acciones=acciones_con_indices, total_ventas=total_ventas, total_compras=total_compras, labels=labels, data=data)
 
 
 def format_rut(rut):
@@ -155,7 +160,7 @@ def detalle_empresa(nombre_empresa):
         ORDER BY Ticker;
     """
     
-    acciones_empresa = []
+
     grafico_data = []
     promedio_data = []
     acciones_empresa = []

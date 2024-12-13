@@ -141,19 +141,22 @@
 
     <table class="table table-dark table-striped mt-3">
       <thead>
-        <tr>
-          <th scope="col">Total en Plata</th>
-        </tr>
+          <tr class="text-center">
+              <th scope="col">Total en Compras</th>
+              <th scope="col">Total en Ventas</th>
+          </tr>
       </thead>
       <tbody>
-        <tr>
-          <th scope="row">{{ "{:,.2f}".format(total_dinero).replace(",", ".") }}</th> <!-- Índice -->
-        </tr>
+          <tr class="text-center">
+              <th scope="row">{{ "{:,.2f}".format(total_compras).replace(",", ".") }}</th>
+              <th scope="row">{{ "{:,.2f}".format(total_ventas).replace(",", ".") }}</th>
+          </tr>
       </tbody>
     </table>
+  
 
     <div class="chart-container">
-      <h2>Monto Total por Empresa</h2>
+      <h2 class="text-center">Total en Compras por Empresas</h2>
       <canvas id="accionesChart"></canvas>
     </div>
     

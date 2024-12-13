@@ -180,7 +180,7 @@
           <td>{{ "{:,.2f}".format(factura[7]).replace(',', '.') }}</td> <!-- Precio Unitario -->
           <td>{{ "{:,.2f}".format(factura[8]).replace(',', '.') }}</td> <!-- Sub Total -->
           <td>{{ "{:,.2f}".format(factura[9]).replace(',', '.') }}</td> <!-- Valor Total -->
-          <td>
+          <td class="text-center">
             {% if factura[10] %}
             <a
               href="{{ factura[10] | replace('\\', '/') }}"

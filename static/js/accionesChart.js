@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
 		labels: chartLabels, // Etiquetas desde el template
 		datasets: [
 			{
-				label: "Monto Total por Empresa",
+				label: "Total en Compras",
 				data: chartDataset, // Datos desde el template
 				backgroundColor: [
 					"rgba(255, 99, 132, 0.6)",
@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
 				},
 				title: {
 					display: true,
-					text: "Monto Total por Empresa",
+					text: "Total en Compras por Empresa",
 				},
 			},
 		},
