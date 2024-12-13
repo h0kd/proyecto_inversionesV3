@@ -107,33 +107,32 @@ def detalle_empresa(nombre_empresa):
 
     # Consulta para obtener las acciones relacionadas con la empresa seleccionada y el promedio ponderado
     acciones_query = """
-    SELECT 
-        f.NombreActivo AS Ticker,
-        f.Fecha AS FechaCompra,
-        f.Cantidad AS CantidadAcciones,
-        f.PrecioUnitario AS PrecioCompra,
-        f.Valor AS ValorTotal,
-        f.Comision AS Comision,
-        ROUND((
-            SELECT 
-                SUM(f_interno.Valor) / SUM(f_interno.Cantidad)
-            FROM Facturas f_interno
-            JOIN EntidadComercial e_interno ON f_interno.ID_Entidad_Comercial = e_interno.ID_Entidad
-            WHERE 
-                f_interno.NombreActivo = f.NombreActivo
-                AND e_interno.Nombre = e.Nombre
-        ), 2) AS PrecioPromedioCompra,
-        COALESCE(ROUND((
-            SELECT 
-                SUM(d.valortotal)
-            FROM Dividendos d
-            WHERE d.id_accion = CAST(f.NombreActivo AS INTEGER)
-        ), 2), 0) AS DividendosTotales
-    FROM Facturas f
-    JOIN EntidadComercial e ON f.ID_Entidad_Comercial = e.ID_Entidad
-    WHERE e.Nombre = 'INNOVACIÓN EMPRESARIAL LTDA.'
-    ORDER BY f.Fecha;
+        SELECT 
+            f.NumeroFactura AS FacturaID,
+            a.Ticker AS Ticker,
+            f.Fecha AS FechaCompra,
+            f.Cantidad AS CantidadAcciones,
+            ROUND(f.PrecioUnitario, 2) AS PrecioCompra,
+            ROUND(f.Valor, 2) AS ValorTotal,
+            ROUND(f.Comision, 2) AS Comision,
+            ROUND((
+                SELECT 
+                    SUM(f_interno.Cantidad * f_interno.PrecioUnitario) / SUM(f_interno.Cantidad)
+                FROM Facturas f_interno
+                WHERE f_interno.id_accion = a.id
+            ), 2) AS PrecioPromedioCompra,
+            COALESCE((
+                SELECT 
+                    SUM(d.valortotal)
+                FROM Dividendos d
+                WHERE d.id_accion = a.id
+            ), 0) AS DividendosTotales
+        FROM Facturas f
+        JOIN Acciones a ON f.id_accion = a.id
+        WHERE a.Empresa = %s
+        ORDER BY f.Fecha;
     """
+
     grafico_query = """
         SELECT
             f.NombreActivo AS Ticker,
@@ -146,14 +145,14 @@ def detalle_empresa(nombre_empresa):
     """
 
     promedio_query = """
-    SELECT 
-        f.NombreActivo AS Ticker,
-        SUM(f.Valor) / SUM(f.Cantidad) AS PromedioCompra
-    FROM Facturas f
-    JOIN EntidadComercial e ON f.ID_Entidad_Comercial = e.ID_Entidad
-    WHERE e.Nombre = %s
-    GROUP BY f.NombreActivo
-    ORDER BY Ticker;
+        SELECT 
+            f.NombreActivo AS Ticker,
+            SUM(f.Valor) / SUM(f.Cantidad) AS PromedioCompra
+        FROM Facturas f
+        JOIN EntidadComercial e ON f.ID_Entidad_Comercial = e.ID_Entidad
+        WHERE e.Nombre = %s
+        GROUP BY f.NombreActivo
+        ORDER BY Ticker;
     """
     
     acciones_empresa = []
@@ -207,32 +206,37 @@ def acciones_por_ticker(nombre_empresa, ticker):
 
     acciones = []
     try:
-        # Consulta SQL para obtener las acciones del ticker
+        print(f"Nombre empresa: {nombre_empresa}, Ticker: {ticker}")  # Depuración
+
+        # Consulta SQL ajustada para mostrar compras y ventas
         query = """
         SELECT 
             f.NumeroFactura, 
-            'Compra' AS Tipo,  -- Asignar un tipo fijo como ejemplo
-            f.Fecha AS FechaCompra, 
+            f.Tipo AS Tipo,  -- Compra o Venta
+            f.Fecha AS FechaTransaccion, 
             f.Cantidad AS CantidadAcciones, 
-            f.PrecioUnitario AS PrecioCompra, 
-            f.Comision AS Comision, 
-            (
-                SELECT 
-                    SUM(f_interno.Valor) / SUM(f_interno.Cantidad)
-                FROM Facturas f_interno
-                JOIN EntidadComercial e_interno ON f_interno.ID_Entidad_Comercial = e.interno.ID_Entidad
-                WHERE f_interno.NombreActivo = f.NombreActivo
-            ) AS PrecioPromedioCompra,
-            f.Valor AS ValorTotal
+            ROUND(f.PrecioUnitario, 2) AS PrecioTransaccion, 
+            ROUND(f.Comision, 2) AS Comision, 
+            ROUND((SELECT 
+                        SUM(f_interno.Valor) / SUM(f_interno.Cantidad)
+                   FROM Facturas f_interno
+                   JOIN Acciones a_interno ON a_interno.id = f_interno.id_accion
+                   WHERE a_interno.Ticker = %s 
+                   AND a_interno.Empresa = %s
+                  ), 2) AS PrecioPromedioCompra,
+            ROUND(f.Valor, 2) AS ValorTotal,
+            f.AdjuntoFactura AS PDF
         FROM Facturas f
-        JOIN EntidadComercial e ON f.ID_Entidad_Comercial = e.ID_Entidad
-        WHERE e.Nombre = %s AND f.NombreActivo = %s
+        JOIN Acciones a ON a.id = f.id_accion
+        WHERE a.Empresa = %s AND a.Ticker = %s
         ORDER BY f.Fecha;
         """
-        cursor.execute(query, (nombre_empresa, ticker))
+        cursor.execute(query, (ticker, nombre_empresa, nombre_empresa, ticker))
         acciones = cursor.fetchall()
+        print(f"Resultados de la consulta: {acciones}")  # Depuración
     except Exception as e:
         flash(f"Error al obtener acciones para el ticker {ticker}: {e}", "error")
+        print(f"Error al ejecutar la consulta: {e}")  # Depuración
     finally:
         cursor.close()
         conn.close()
@@ -265,18 +269,38 @@ def add_dividendo(ticker, nombre_empresa):
         cursor = conn.cursor()
 
         try:
+            # Obtener la cantidad total de acciones asociadas al Ticker
+            cursor.execute("""
+                SELECT SUM(f.Cantidad) 
+                FROM Facturas f
+                JOIN Acciones a ON a.id = f.id_accion
+                WHERE a.ticker = %s
+            """, (ticker,))
+            cantidad_total_acciones = cursor.fetchone()[0]
+
+            # Si no hay acciones, establecer la cantidad como 0
+            if not cantidad_total_acciones:
+                cantidad_total_acciones = 0
+
+            print(f"Cantidad total de acciones para {ticker}: {cantidad_total_acciones}")  # Depuración
+
+            # Calcular el valor total del dividendo
+            valortotal = valorporaccion * cantidad_total_acciones
+            print(f"Valor total calculado para el dividendo: {valortotal}")  # Depuración
+
             # Insertar el dividendo en la base de datos
             cursor.execute("""
-                INSERT INTO Dividendos (id_accion, nombre, fechacierre, fechapago, valorporaccion, moneda)
+                INSERT INTO Dividendos (id_accion, nombre, fechacierre, fechapago, valorporaccion, moneda, valortotal)
                 VALUES (
-                    (SELECT ID FROM Acciones WHERE NombreActivo = %s LIMIT 1),
-                    %s, %s, %s, %s, %s
+                    (SELECT id FROM Acciones WHERE ticker = %s LIMIT 1),
+                    %s, %s, %s, %s, %s, %s
                 )
-            """, (ticker, nombre_dividendo, fechacierre, fechapago, valorporaccion, moneda))
+            """, (ticker, nombre_dividendo, fechacierre, fechapago, valorporaccion, moneda, valortotal))
             conn.commit()
             flash(f"Dividendo agregado para {ticker} con éxito.", "success")
         except Exception as e:
             conn.rollback()
+            print(f"Error al agregar dividendo: {e}")  # Depuración
             flash(f"Error al agregar dividendo: {e}", "error")
         finally:
             cursor.close()
@@ -287,4 +311,8 @@ def add_dividendo(ticker, nombre_empresa):
 
     # Renderizar la plantilla para agregar dividendos
     return render_template('acciones/dividendos/add_dividendo.html', ticker=ticker, nombre_empresa=nombre_empresa)
+
+
+
+
 

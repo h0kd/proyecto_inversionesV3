@@ -110,17 +110,17 @@
               {% for accion in acciones_empresa %}
               <tr>
                   <td>
-                    <a href="{{ url_for('acciones.acciones_por_ticker', nombre_empresa=nombre_empresa, ticker=accion[0]) }}" class="text-decoration-none text-light">
-                        {{ accion[0] }}
+                    <a href="{{ url_for('acciones.acciones_por_ticker', nombre_empresa=nombre_empresa, ticker=accion[1]) }}" class="text-decoration-none text-light">
+                        {{ accion[1] }}
                     </a>
                   </td> <!-- Ticker -->
-                  <td>{{ accion[1] }}</td>
-                  <td>{{ accion[2] }}</td>
-                  <td>{{ accion[3] }}</td>
-                  <td>{{ accion[5] }}</td>
-                  <td>{{ accion[6] }}</td>
-                  <td>{{ accion[4] }}</td>
-                  <td>{{ accion[7] }}</td>
+                  <td>{{ accion[2] }}</td> <!-- 2 -->
+                  <td>{{ accion[3] }}</td> <!-- 3 -->
+                  <td>{{ accion[4] }}</td> <!-- 4 -->
+                  <td>{{ accion[6] }}</td> <!-- 6 -->
+                  <td>{{ accion[7] }}</td> <!-- 7 -->
+                  <td>{{ accion[5] }}</td> <!-- 5 -->
+                  <td>{{ accion[8] }}</td> <!-- 8 -->
               </tr>
               {% endfor %}
           {% else %}
