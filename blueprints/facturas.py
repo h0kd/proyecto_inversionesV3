@@ -50,7 +50,6 @@ def add_factura():
                 # Validar campos obligatorios
                 if not id_corredora or not id_empresa_emisora:
                     flash("Por favor, seleccione una corredora y una empresa emisora.", "error")
-                    print("Error: No se seleccionaron todos los campos requeridos.")
                     return redirect(url_for('facturas.add_factura'))
 
                 # Obtener el ID de TipoInversion
@@ -58,12 +57,16 @@ def add_factura():
                 tipo_inversion_result = cursor.fetchone()
                 if not tipo_inversion_result:
                     flash(f"Tipo de inversión '{tipo}' no encontrado.", "error")
-                    print(f"Error: Tipo de inversión '{tipo}' no encontrado.")
                     return redirect(url_for('facturas.add_factura'))
                 id_tipo_inversion = tipo_inversion_result[0]
 
                 # Verificar o crear acción
-                cursor.execute("SELECT id FROM Acciones WHERE Ticker = %s AND Empresa = (SELECT Nombre FROM EntidadComercial WHERE ID_Entidad = %s)", (nombre_activo, id_empresa_emisora))
+                cursor.execute("""
+                    SELECT id, Cantidad FROM Acciones 
+                    WHERE Ticker = %s AND Empresa = (
+                        SELECT Nombre FROM EntidadComercial WHERE ID_Entidad = %s
+                    )
+                """, (nombre_activo, id_empresa_emisora))
                 accion_result = cursor.fetchone()
 
                 if not accion_result:
@@ -73,9 +76,26 @@ def add_factura():
                         RETURNING id
                     """, (nombre_activo, nombre_activo, id_empresa_emisora))
                     accion_id = cursor.fetchone()[0]
+                    cantidad_actual = 0  # No hay cantidad previa porque es nueva
                     conn.commit()
                 else:
                     accion_id = accion_result[0]
+                    cantidad_actual = float(accion_result[1])  # Convertir a float para operaciones
+
+                # Actualizar la cantidad en Acciones según el tipo de factura
+                if tipo == 'Compra':
+                    nueva_cantidad = cantidad_actual + cantidad
+                elif tipo == 'Venta':
+                    nueva_cantidad = max(0, cantidad_actual - cantidad)
+                else:
+                    flash("Tipo de transacción inválido.", "error")
+                    return redirect(url_for('facturas.add_factura'))
+
+                cursor.execute("""
+                    UPDATE Acciones
+                    SET Cantidad = %s
+                    WHERE id = %s
+                """, (nueva_cantidad, accion_id))
 
                 # Insertar la factura
                 cursor.execute("""
@@ -84,9 +104,11 @@ def add_factura():
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
                     numero_factura, id_corredora, id_empresa_emisora, fecha, tipo, cantidad, precio_unitario,
-                    subtotal, valor_total, nombre_activo, comision, gasto, adjuntofactura, id_tipo_inversion, 'EntidadComercial', accion_id
+                    subtotal, valor_total, nombre_activo, comision, gasto, adjuntofactura, id_tipo_inversion, 
+                    'EntidadComercial', accion_id
                 ))
                 conn.commit()
+
                 flash("Factura agregada exitosamente.", "success")
                 return redirect(url_for('facturas.listado_facturas'))
 
@@ -117,6 +139,8 @@ def add_factura():
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
+
 
 @facturas_bp.route('/listado_facturas', methods=['GET'])
 @login_required

@@ -130,8 +130,10 @@ def detalle_empresa(nombre_empresa):
                 SELECT 
                     SUM(d.valortotal)
                 FROM Dividendos d
-                WHERE d.id_accion = a.id
+                WHERE d.id_accion = f.id_accion
+                AND d.id_factura = f.NumeroFactura
             ), 0) AS DividendosTotales,
+            ROUND(f.Gasto, 2) AS Gasto,  -- Nueva columna Gasto
             f.Tipo AS Tipo
         FROM Facturas f
         JOIN Acciones a ON f.id_accion = a.id
@@ -257,66 +259,97 @@ def acciones_por_ticker(nombre_empresa, ticker):
 
 
 
-@acciones_bp.route('/add_dividendo/<ticker>/<nombre_empresa>', methods=['GET', 'POST'])
+@acciones_bp.route('/add_dividendo/<ticker>/<nombre_empresa>/<numero_factura>', methods=['GET', 'POST'])
 @login_required
-def add_dividendo(ticker, nombre_empresa):
+def add_dividendo(ticker, nombre_empresa, numero_factura):
     if request.method == 'POST':
-        # Obtener los datos del formulario
         fechacierre = request.form['fecha_cierre']
         fechapago = request.form['fecha_pago']
         valorporaccion = float(request.form['valor_por_accion'])
         moneda = request.form['moneda']
 
-        # El nombre del dividendo será el Ticker
-        nombre_dividendo = ticker
-
-        # Conectar a la base de datos
         conn = get_db_connection()
         cursor = conn.cursor()
 
         try:
-            # Obtener la cantidad total de acciones asociadas al Ticker
+            # Obtener la factura y la cantidad de acciones
             cursor.execute("""
-                SELECT SUM(f.Cantidad) 
-                FROM Facturas f
-                JOIN Acciones a ON a.id = f.id_accion
-                WHERE a.ticker = %s
-            """, (ticker,))
-            cantidad_total_acciones = cursor.fetchone()[0]
+                SELECT id_accion, Cantidad
+                FROM Facturas
+                WHERE NumeroFactura = %s
+            """, (numero_factura,))
+            factura = cursor.fetchone()
 
-            # Si no hay acciones, establecer la cantidad como 0
-            if not cantidad_total_acciones:
-                cantidad_total_acciones = 0
+            if not factura:
+                flash("No se encontró la factura especificada.", "error")
+                return redirect(url_for('acciones.acciones_por_ticker', nombre_empresa=nombre_empresa, ticker=ticker))
 
-            print(f"Cantidad total de acciones para {ticker}: {cantidad_total_acciones}")  # Depuración
-
-            # Calcular el valor total del dividendo
+            id_accion, cantidad_total_acciones = factura
             valortotal = valorporaccion * cantidad_total_acciones
-            print(f"Valor total calculado para el dividendo: {valortotal}")  # Depuración
 
-            # Insertar el dividendo en la base de datos
+            # Insertar el dividendo relacionado con la factura específica
             cursor.execute("""
-                INSERT INTO Dividendos (id_accion, nombre, fechacierre, fechapago, valorporaccion, moneda, valortotal)
-                VALUES (
-                    (SELECT id FROM Acciones WHERE ticker = %s LIMIT 1),
-                    %s, %s, %s, %s, %s, %s
-                )
-            """, (ticker, nombre_dividendo, fechacierre, fechapago, valorporaccion, moneda, valortotal))
+                INSERT INTO Dividendos (id_accion, id_factura, nombre, fechacierre, fechapago, valorporaccion, moneda, valortotal)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (id_accion, numero_factura, ticker, fechacierre, fechapago, valorporaccion, moneda, valortotal))
             conn.commit()
-            flash(f"Dividendo agregado para {ticker} con éxito.", "success")
+
+            flash(f"Dividendo agregado para la acción {ticker} con éxito.", "success")
         except Exception as e:
             conn.rollback()
-            print(f"Error al agregar dividendo: {e}")  # Depuración
             flash(f"Error al agregar dividendo: {e}", "error")
         finally:
             cursor.close()
             conn.close()
 
-        # Redirigir a la vista de detalle de la empresa
-        return redirect(url_for('acciones.detalle_empresa', nombre_empresa=nombre_empresa))
+        return redirect(url_for('acciones.acciones_por_ticker', nombre_empresa=nombre_empresa, ticker=ticker))
 
-    # Renderizar la plantilla para agregar dividendos
-    return render_template('acciones/dividendos/add_dividendo.html', ticker=ticker, nombre_empresa=nombre_empresa)
+    return render_template(
+        'acciones/dividendos/add_dividendo.html',
+        ticker=ticker,
+        nombre_empresa=nombre_empresa,
+        numero_factura=numero_factura
+    )
+
+
+
+@acciones_bp.route('/historial_dividendos/<ticker>/<nombre_empresa>/<numero_factura>', methods=['GET'])
+@login_required
+def historial_dividendos(ticker, nombre_empresa, numero_factura):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    dividendos = []
+    try:
+        # Consulta para obtener los dividendos asociados a una factura específica
+        query = """
+            SELECT 
+                d.fechacierre, 
+                d.fechapago, 
+                d.valorporaccion, 
+                d.moneda, 
+                d.valortotal
+            FROM Dividendos d
+            WHERE d.id_factura = %s
+        """
+        cursor.execute(query, (numero_factura,))
+        dividendos = cursor.fetchall()
+    except Exception as e:
+        print(f"Error al obtener historial de dividendos: {e}")
+        flash(f"Error al obtener historial de dividendos: {e}", "error")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return render_template(
+        'acciones/dividendos/historial_dividendos.html',
+        ticker=ticker,
+        nombre_empresa=nombre_empresa,
+        numero_factura=numero_factura,
+        dividendos=dividendos
+    )
+
+
 
 
 
