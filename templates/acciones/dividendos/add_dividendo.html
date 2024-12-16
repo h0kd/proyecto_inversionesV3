@@ -11,12 +11,10 @@
   </head>
   <body>
     <div class="container mt-5">
-      <h1>
-        Agregar Dividendo a la Factura {{ numero_factura }} de {{ ticker }}
-      </h1>
+      <h1>Agregar Dividendo a todas las acciones de {{ ticker }}</h1>
       <form
         method="POST"
-        action="{{ url_for('acciones.add_dividendo', nombre_empresa=nombre_empresa, ticker=ticker, numero_factura=numero_factura) }}"
+        action="{{ url_for('acciones.add_dividendo', nombre_empresa=nombre_empresa, ticker=ticker) }}"
       >
         <div class="mb-3">
           <label for="fecha_cierre" class="form-label">Fecha de Cierre</label>
@@ -64,9 +62,9 @@
         </div>
         <button type="submit" class="btn btn-primary">Agregar Dividendo</button>
         <a
-          href="{{ url_for('acciones.acciones_por_ticker', nombre_empresa=nombre_empresa, ticker=ticker) }}"
+          href="{{ url_for('acciones.detalle_empresa', nombre_empresa=nombre_empresa) }}"
           class="btn btn-secondary"
-          >Cancelar</a
+          >Volver</a
         >
       </form>
     </div>

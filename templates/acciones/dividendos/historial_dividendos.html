@@ -23,16 +23,38 @@
             <th>Valor por Acción</th>
             <th>Moneda</th>
             <th>Valor Total</th>
+            <th>Rentabilidad (%)</th>
+            <!-- Nueva columna -->
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
           {% for dividendo in dividendos %}
           <tr>
-            <td>{{ dividendo[0] }}</td>
             <td>{{ dividendo[1] }}</td>
-            <td>{{ "{:,.2f}".format(dividendo[2]) }}</td>
-            <td>{{ dividendo[3] }}</td>
-            <td>{{ "{:,.2f}".format(dividendo[4]) }}</td>
+            <td>{{ dividendo[2] }}</td>
+            <td>{{ "{:,.2f}".format(dividendo[3]) }}</td>
+            <td>{{ dividendo[4] }}</td>
+            <td>{{ "{:,.2f}".format(dividendo[5]) }}</td>
+            <td>{{ "{:,.2f}".format(dividendo[6]) }}</td>
+            <!-- Mostrar Rentabilidad -->
+            <td>
+              <a
+                href="{{ url_for('acciones.editar_dividendo', id_dividendo=dividendo[6]) }}"
+                class="btn btn-warning btn-sm"
+                >Editar</a
+              >
+              <!-- Botón de editar -->
+              <form
+                action="{{ url_for('acciones.eliminar_dividendo', id_dividendo=dividendo[0]) }}"
+                method="POST"
+                style="display: inline"
+              >
+                <button type="submit" class="btn btn-danger btn-sm">
+                  Eliminar
+                </button>
+              </form>
+            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -42,7 +64,7 @@
       {% endif %}
 
       <a
-        href="{{ url_for('acciones.acciones_por_ticker', nombre_empresa=nombre_empresa, ticker=ticker) }}"
+        href="{{ url_for('acciones.detalle_empresa', nombre_empresa=nombre_empresa) }}"
         class="btn btn-secondary"
         >Volver</a
       >

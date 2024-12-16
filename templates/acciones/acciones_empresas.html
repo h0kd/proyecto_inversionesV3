@@ -107,59 +107,62 @@
 			<h1>Acciones de {{ nombre_empresa }}</h1>
       <table class="table table-dark table-striped mt-3">
         <thead>
-          <tr class="text-center">
-            <th scope="col">Ticker</th>
-            <th scope="col">Fecha de Compra</th>
-            <th scope="col">Cantidad</th>
-            <th scope="col">Precio Unitario</th>
-            <th scope="col">Comisión</th>
-            <th scope="col">Gasto</th> <!-- Nueva columna -->
-            <th scope="col">Promedio Compra</th>
-            <th scope="col">Valor Total</th>
-            <th scope="col">Dividendos</th>
-            <th scope="col">Tipo</th>
-          </tr>
+            <tr class="text-center">
+                <th scope="col">Ticker</th>
+                <th scope="col">Cantidad</th>
+                <th scope="col">Comisión</th>
+                <th scope="col">Gasto</th>
+                <th scope="col">Promedio Compra</th>
+                <th scope="col">Valor Total</th>
+                <th scope="col">Dividendos</th>
+            </tr>
         </thead>
         <tbody>
-          {% if acciones_empresa %}
-            {% for accion in acciones_empresa %}
-            <tr class="text-center">
-              <td>
-                <a href="{{ url_for('acciones.acciones_por_ticker', nombre_empresa=nombre_empresa, ticker=accion[1]) }}" class="text-decoration-none text-light">
-                    {{ accion[1] }}
-                </a>
-              </td>
-              <td>{{ accion[2] }}</td> <!-- FechaCompra -->
-              <td>{{ accion[3] }}</td> <!-- Cantidad -->
-              <td>{{ "{:,.2f}".format(accion[4]).replace(",", ".") }}</td> <!-- Precio Unitario -->
-              <td>{{ "{:,.2f}".format(accion[6]).replace(",", ".") }}</td> <!-- Comision -->
-              <td>{{ "{:,.2f}".format(accion[9] | float).replace(",", ".") }}</td> <!-- Gasto -->
-              <td>{{ "{:,.2f}".format(accion[7]).replace(",", ".") }}</td> <!-- PromedioCompra -->
-              <td>{{ "{:,.2f}".format(accion[5]).replace(",", ".") }}</td> <!-- Valor Total -->
-              <td>{{ "{:,.2f}".format(accion[8]).replace(",", ".") }}</td> <!-- Dividendos -->
-              <td>{{ accion[10] }}</td> <!-- Tipo -->
-            </tr>
-            {% endfor %}
-          {% else %}
-            <tr>
-              <td colspan="10">No hay acciones registradas para esta empresa.</td>
-            </tr>
-          {% endif %}
+            {% if acciones_empresa %}
+                {% for accion in acciones_empresa %}
+                <tr class="text-center">
+                    <td>
+                        <a href="{{ url_for('acciones.acciones_por_ticker', nombre_empresa=nombre_empresa, ticker=accion[0]) }}" class="text-decoration-none text-light">
+                            {{ accion[0] }}
+                        </a>
+                    </td>
+                    <td>{{ "{:,.2f}".format(accion[1]).replace(",", ".") }}</td> <!-- Cantidad -->
+                    <td>{{ "{:,.2f}".format(accion[2]).replace(",", ".") }}</td> <!-- Comisión -->
+                    <td>{{ "{:,.2f}".format(accion[3]).replace(",", ".") }}</td> <!-- Gasto -->
+                    <td>{{ "{:,.2f}".format(accion[4]).replace(",", ".") }}</td> <!-- Promedio Compra -->
+                    <td>{{ "{:,.2f}".format(accion[5]).replace(",", ".") }}</td> <!-- Valor Total -->
+                    <td>
+                        <a 
+                            href="{{ url_for('acciones.add_dividendo', ticker=accion[0], nombre_empresa=nombre_empresa, numero_factura=accion[7]) }}" 
+                            class="btn btn-success">
+                            Agregar
+                        </a>
+                        <a 
+                            href="{{ url_for('acciones.historial_dividendos', ticker=accion[0], nombre_empresa=nombre_empresa, numero_factura=accion[7]) }}" 
+                            class="btn btn-info">
+                            Historial
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="7">No hay acciones registradas para esta empresa.</td>
+                </tr>
+            {% endif %}
         </tbody>
-      </table>
-      
-            <div class="d-flex">
-                <div class="chart-container text-center">
-                    <h2>Suma Total</h2>
-                    <canvas id="accionesEmpresasChart"></canvas>
-                </div>
+    </table>
+    <div class="d-flex">
+        <div class="chart-container text-center">
+            <h2>Suma Total</h2>
+            <canvas id="accionesEmpresasChart"></canvas>
+        </div>
 
-                <div class="chart-container text-center">
-                    <h2>Promedio Compra</h2>
-                    <canvas id="accionesPromedioCompraChart"></canvas>
-                </div>
-            </div>
-
+        <div class="chart-container text-center">
+            <h2>Promedio Compra</h2>
+            <canvas id="accionesPromedioCompraChart"></canvas>
+        </div>
+    </div>
 			<a href="/acciones" class="btn btn-primary mt-3">Volver</a>
 		</div>
 	</body>

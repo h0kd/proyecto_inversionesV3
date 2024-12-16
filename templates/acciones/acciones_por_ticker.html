@@ -39,10 +39,10 @@
             <th>Cantidad</th>
             <th>Precio Unitario</th>
             <th>Comisión</th>
+            <th>Gasto</th>
             <th>Promedio Compra</th>
             <th>Valor Total</th>
             <th>PDF</th>
-            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -56,10 +56,11 @@
             <td>{{ accion[5] }}</td>
             <td>{{ accion[6] }}</td>
             <td>{{ accion[7] }}</td>
+            <td>{{ "{:,.2f}".format(accion[8]).replace(",", ".") }}</td>
             <td>
-              {% if accion[8] %}
+              {% if accion[9] %}
               <a
-                href="/{{ accion[8] | replace('\\', '/') }}"
+                href="/{{ accion[9] | replace('\\', '/') }}"
                 target="_blank"
                 class="btn btn-primary view-file"
               >
@@ -68,20 +69,6 @@
               {% else %}
               <span class="text-muted">No disponible</span>
               {% endif %}
-            </td>
-            <td>
-              <a
-                href="{{ url_for('acciones.add_dividendo', ticker=ticker, nombre_empresa=nombre_empresa, numero_factura=accion[0]) }}"
-                class="btn btn-success"
-              >
-                Agregar Dividendo
-              </a>
-              <a
-                href="{{ url_for('acciones.historial_dividendos', ticker=ticker, nombre_empresa=nombre_empresa, numero_factura=accion[0]) }}"
-                class="btn btn-info"
-              >
-                Historial Dividendos
-              </a>
             </td>
           </tr>
           {% endfor %}
