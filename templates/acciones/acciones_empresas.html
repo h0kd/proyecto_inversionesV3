@@ -139,7 +139,7 @@
                 {% for accion in acciones_empresa %}
                 <tr class="text-center">
                     <td>
-                        <a href="{{ url_for('acciones.acciones_por_ticker', nombre_empresa=nombre_empresa, ticker=accion[0]) }}" class="text-decoration-none text-light">
+                        <a href="{{ url_for('acciones.acciones_por_ticker', nombre_empresa=nombre_empresa, ticker=accion[0]) }}" class="text-decoration-none text-info fw-bold">
                             {{ accion[0] }}
                         </a>
                     </td>
