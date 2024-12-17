@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from flask_login import LoginManager, login_required, logout_user, login_user
+from flask_login import LoginManager, login_required, logout_user, login_user # type: ignore
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 from database import get_db_connection
@@ -99,20 +99,46 @@ def load_user(user_id):
 @login_required
 def index():
     conn = get_db_connection()
-    query = """
-        SELECT ti.Nombre AS TipoInversion, SUM(f.SubTotal) AS Total
-        FROM Facturas f
-        JOIN TipoInversion ti ON f.ID_TipoInversion = ti.ID
-        GROUP BY ti.Nombre
-        ORDER BY Total DESC;
-    """
-    df = pd.read_sql(query, conn)
-    conn.close()
+    cursor = conn.cursor()
+    
+    try:
+        # Empresas registradas
+        cursor.execute("SELECT COUNT(*) FROM EntidadComercial WHERE TipoEntidad = 'Empresa';")
+        total_empresas = cursor.fetchone()[0]
+        print(f"Total empresas registradas: {total_empresas}")
 
-    fig = px.bar(df, x='tipoinversion', y='total', title='Total por Tipo de Inversión')
-    graph_html = pio.to_html(fig, full_html=False)
+        # Total acciones
+        cursor.execute("SELECT SUM(Cantidad) FROM Facturas;")
+        total_acciones = cursor.fetchone()[0] or 0
+        print(f"Total acciones: {total_acciones}")
 
-    return render_template('index.html', graph=graph_html)
+        # Valor total invertido
+        cursor.execute("SELECT SUM(Valor) FROM Facturas;")
+        valor_total_invertido = cursor.fetchone()[0] or 0
+        print(f"Valor total invertido: {valor_total_invertido}")
+
+        # Total dividendos
+        cursor.execute("SELECT SUM(valortotal) FROM Dividendos;")
+        total_dividendos = cursor.fetchone()[0] or 0
+        print(f"Total dividendos: {total_dividendos}")
+
+    except Exception as e:
+        flash(f"Error al obtener métricas: {e}", "error")
+        print(f"Error al obtener métricas: {e}")
+        total_empresas = total_acciones = valor_total_invertido = total_dividendos = 0
+    finally:
+        cursor.close()
+        conn.close()
+
+    return render_template(
+        'index.html',
+        total_empresas=total_empresas,
+        total_acciones=total_acciones,
+        valor_total_invertido=f"{valor_total_invertido:,.2f}",
+        total_dividendos=f"{total_dividendos:,.2f}"
+    )
+
+
 
 # desde aca debo cambiar todo de lugar
 
