@@ -10,6 +10,80 @@
     />
   </head>
   <body class="centered-form">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/">Sistema de Inversiones</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav mx-auto">
+            <!-- Menú Desplegable -->
+            <li class="nav-item dropdown mx-3">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="navbarDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Ingresos
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <li><a class="dropdown-item" href="/bancos">Bancos</a></li>
+                <li><a class="dropdown-item" href="/empresas">Empresas</a></li>
+                <li><a class="dropdown-item" href="/corredores">Corredores de Bolsa</a></li>
+                <li><a class="dropdown-item" href="/companias">Compañías de Seguro</a></li>
+                <li><a class="dropdown-item" href="/clientes">Clientes</a></li>
+                <li><a class="dropdown-item" href="/parametros">Parámetros</a></li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown mx-3">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="navbarDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Inversiones
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <li><a class="dropdown-item" href="/acciones">Acciones</a></li>
+                <li><a class="dropdown-item" href="/fondos_mutuos">FFMM</a></li>
+                <li><a class="dropdown-item" href="/deposito_a_plazo">DP</a></li>
+              </ul>
+            </li>
+            <li class="nav-item mx-3">
+              <a class="nav-link" href="/boletas_garantia"
+                >Boletas de Garantia</a
+              >
+            </li>
+            <li class="nav-item mx-3">
+              <a class="nav-link" href="/polizas">Polizas de Seguro</a>
+            </li>
+          </ul>
+          <!-- Enlace al lado derecho -->
+          </ul>
+          <!-- Enlace al lado derecho -->
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="/logout">Cerrar Sesión</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
     <form
       action="{{ url_for('empresas_bp.edit_empresa', id_empresa=id_empresa) }}"
       method="POST"
@@ -47,6 +121,7 @@
         id="fono_fijo"
         name="fono_fijo"
         value="{{ empresa[3] }}"
+        oninput="this.value = this.value.replace(/[^0-9]/g, '');"
       /><br /><br />
 
       <label for="fono_movil">Fono Móvil:</label>
@@ -55,6 +130,7 @@
         id="fono_movil"
         name="fono_movil"
         value="{{ empresa[4] }}"
+        oninput="this.value = this.value.replace(/[^0-9]/g, '');"
       /><br /><br />
 
       <button type="submit">Guardar Cambios</button>

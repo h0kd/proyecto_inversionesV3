@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required
+from flask_login import login_required # type: ignore
 from database import get_db_connection
 
 # Crear el Blueprint
@@ -61,7 +61,7 @@ def add_compania():
             conn.commit()
 
             flash("Compania agregado exitosamente.", "success")
-            return redirect(url_for('listar_companias'))
+            return redirect(url_for('companias_bp.listar_companias'))
         except Exception as e:
             conn.rollback()
             flash(f"Error al agregar el compania: {e}", "error")
@@ -84,7 +84,7 @@ def delete_compania(id_compania):
         compania = cursor.fetchone()
         if not compania:
             flash("El compania no existe o no es del tipo 'Compania'.", "error")
-            return redirect(url_for('listar_companias'))
+            return redirect(url_for('companias_bp.listar_companias'))
 
         # Intentar eliminar el compania
         cursor.execute("DELETE FROM Entidad WHERE ID_Entidad = %s AND TipoEntidad = 'Compania'", (id_compania,))
@@ -101,7 +101,7 @@ def delete_compania(id_compania):
         conn.close()
 
     # Redirigir al listado de companias después de la eliminación
-    return redirect(url_for('listar_companias'))
+    return redirect(url_for('companias_bp.listar_companias'))
 
 @companias_bp.route('/companias/edit/<int:id_compania>', methods=['GET', 'POST'])
 @login_required
@@ -127,7 +127,7 @@ def edit_compania(id_compania):
             conn.commit()
 
             flash("Compania actualizado exitosamente.", "success")
-            return redirect(url_for('listar_companias'))
+            return redirect(url_for('companias_bp.listar_companias'))
 
         # Obtener los datos actuales del compania
         cursor.execute("""
@@ -139,13 +139,13 @@ def edit_compania(id_compania):
 
         if not compania:
             flash("Compania no encontrado.", "error")
-            return redirect(url_for('listar_companias'))
+            return redirect(url_for('companias_bp.listar_companias'))
 
     except Exception as e:
         if conn:
             conn.rollback()
         flash(f"Error al procesar la solicitud: {e}", "error")
-        return redirect(url_for('listar_companias'))
+        return redirect(url_for('companias_bp.listar_companias'))
     finally:
         if cursor:
             cursor.close()

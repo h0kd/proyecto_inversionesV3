@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required
+from flask_login import login_required # type: ignore
 from database import get_db_connection
 from werkzeug.utils import secure_filename
 from helpers.utils import allowed_file

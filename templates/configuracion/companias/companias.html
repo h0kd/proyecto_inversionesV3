@@ -47,23 +47,6 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav mx-auto">
-            <li class="nav-item mx-3">
-              <a class="nav-link" href="/acciones">Acciones</a>
-            </li>
-            <li class="nav-item mx-3">
-              <a class="nav-link" href="/fondos_mutuos">FFMM</a>
-            </li>
-            <li class="nav-item mx-3">
-              <a class="nav-link" href="/deposito_a_plazo">DP</a>
-            </li>
-            <li class="nav-item mx-3">
-              <a class="nav-link" href="/boletas_garantia"
-                >Boletas de Garantia</a
-              >
-            </li>
-            <li class="nav-item mx-3">
-              <a class="nav-link" href="/polizas">Polizas de Seguro</a>
-            </li>
             <!-- Menú Desplegable -->
             <li class="nav-item dropdown mx-3">
               <a
@@ -84,6 +67,31 @@
                 <li><a class="dropdown-item" href="/clientes">Clientes</a></li>
                 <li><a class="dropdown-item" href="/parametros">Parámetros</a></li>
               </ul>
+            </li>
+            <li class="nav-item dropdown mx-3">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="navbarDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Inversiones
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <li><a class="dropdown-item" href="/acciones">Acciones</a></li>
+                <li><a class="dropdown-item" href="/fondos_mutuos">FFMM</a></li>
+                <li><a class="dropdown-item" href="/deposito_a_plazo">DP</a></li>
+              </ul>
+            </li>
+            <li class="nav-item mx-3">
+              <a class="nav-link" href="/boletas_garantia"
+                >Boletas de Garantia</a
+              >
+            </li>
+            <li class="nav-item mx-3">
+              <a class="nav-link" href="/polizas">Polizas de Seguro</a>
             </li>
           </ul>
           <!-- Enlace al lado derecho -->
@@ -127,7 +135,7 @@
           <td>
             <!-- Botón para editar -->
             <a href="/companias/edit/{{ compania[0] }}"
-              ><button>Editar</button></a
+              ><button class="btn btn-warning">Editar</button></a
             >
 
             <!-- Botón para eliminar -->
@@ -137,7 +145,7 @@
               style="display: inline"
               onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta compañia?');"
             >
-              <button type="submit" style="background-color: red; color: white">
+              <button type="submit" class="btn btn-danger">
                 Eliminar
               </button>
             </form>

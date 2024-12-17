@@ -185,7 +185,7 @@
             <a
               href="{{ factura[10] | replace('\\', '/') }}"
               target="_blank"
-              class="view-file text-decoration-none text-light"
+              class="view-file text-decoration-none text-danger"
               title="Abrir archivo PDF"
               ><i class="fa-solid fa-file-pdf"></i
             ></a>
@@ -194,7 +194,7 @@
           <td>
             <a
               href="/edit_factura/{{ factura[0] }}"
-              class="edit-action text-decoration-none text-light"
+              class="edit-action text-decoration-none text-info"
               title="Editar Factura"
             >
               <i class="fa-solid fa-edit"></i> Editar
@@ -202,7 +202,7 @@
             |
             <a
               href="/eliminar_factura/{{ factura[0] }}"
-              class="delete-action text-decoration-none text-light"
+              class="delete-action text-decoration-none text-danger"
               title="Eliminar Factura"
               onclick="return confirm('¿Está seguro de eliminar esta factura?');"
             >

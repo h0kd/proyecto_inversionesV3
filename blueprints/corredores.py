@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required
+from flask_login import login_required # type: ignore
 from database import get_db_connection
 
 # Crear el Blueprint
@@ -61,7 +61,7 @@ def add_corredor():
             conn.commit()
 
             flash("Corredor agregado exitosamente.", "success")
-            return redirect(url_for('listar_corredores'))
+            return redirect(url_for('corredores_bp.listar_corredores'))
         except Exception as e:
             conn.rollback()
             flash(f"Error al agregar el corredor: {e}", "error")
@@ -101,7 +101,7 @@ def delete_corredor(id_corredor):
         conn.close()
 
     # Redirigir al listado de corredores después de la eliminación
-    return redirect(url_for('listar_corredores'))
+    return redirect(url_for('corredores_bp.listar_corredores'))
 
 @corredores_bp.route('/corredores/edit/<int:id_corredor>', methods=['GET', 'POST'])
 @login_required
@@ -127,7 +127,7 @@ def edit_corredor(id_corredor):
             conn.commit()
 
             flash("Corredor actualizado exitosamente.", "success")
-            return redirect(url_for('listar_corredores'))
+            return redirect(url_for('corredores_bp.listar_corredores'))
 
         # Obtener los datos actuales del corredor
         cursor.execute("""
@@ -139,13 +139,13 @@ def edit_corredor(id_corredor):
 
         if not corredor:
             flash("Corredor no encontrado.", "error")
-            return redirect(url_for('listar_corredores'))
+            return redirect(url_for('corredores_bp.listar_corredores'))
 
     except Exception as e:
         if conn:
             conn.rollback()
         flash(f"Error al procesar la solicitud: {e}", "error")
-        return redirect(url_for('listar_corredores'))
+        return redirect(url_for('corredores_bp.listar_corredores'))
     finally:
         if cursor:
             cursor.close()

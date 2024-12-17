@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required
+from flask_login import login_required # type: ignore
 from database import get_db_connection
 
 # Crear el Blueprint
@@ -62,7 +62,7 @@ def add_empresa():
             conn.commit()
 
             flash("Empresa agregada exitosamente.", "success")
-            return redirect(url_for('listar_empresas'))
+            return redirect(url_for('empresas_bp.listar_empresas'))
         except Exception as e:
             conn.rollback()
             flash(f"Error al agregar la empresa: {e}", "error")
@@ -102,7 +102,7 @@ def delete_empresa(id_empresa):
         conn.close()
 
     # Redirigir al listado de bancos después de la eliminación
-    return redirect(url_for('listar_empresas'))
+    return redirect(url_for('empresas_bp.listar_empresas'))
 
 @empresas_bp.route('/empresas/edit/<int:id_empresa>', methods=['GET', 'POST'])
 @login_required
@@ -128,7 +128,7 @@ def edit_empresa(id_empresa):
             conn.commit()
 
             flash("Empresa actualizado exitosamente.", "success")
-            return redirect(url_for('listar_empresas'))
+            return redirect(url_for('empresas_bp.listar_empresas'))
 
         # Obtener los datos actuales del banco
         cursor.execute("""
@@ -140,13 +140,13 @@ def edit_empresa(id_empresa):
 
         if not empresa:
             flash("Empresa no encontrada.", "error")
-            return redirect(url_for('listar_empresas'))
+            return redirect(url_for('empresas_bp.listar_empresas'))
 
     except Exception as e:
         if conn:
             conn.rollback()
         flash(f"Error al procesar la solicitud: {e}", "error")
-        return redirect(url_for('listar_empresas'))
+        return redirect(url_for('empresas_bp.listar_empresas'))
     finally:
         if cursor:
             cursor.close()

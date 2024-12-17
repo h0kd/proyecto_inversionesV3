@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required
+from flask_login import login_required # type: ignore
 from database import get_db_connection
 
 # Crear el Blueprint
@@ -61,7 +61,7 @@ def add_cliente():
             conn.commit()
 
             flash("Cliente agregada exitosamente.", "success")
-            return redirect(url_for('listar_clientes'))
+            return redirect(url_for('clientes_bp.listar_clientes'))
         except Exception as e:
             conn.rollback()
             flash(f"Error al agregar la cliente: {e}", "error")
@@ -95,7 +95,7 @@ def edit_cliente(id_cliente):
             conn.commit()
 
             flash("Cliente actualizado exitosamente.", "success")
-            return redirect(url_for('listar_clientes'))
+            return redirect(url_for('clientes_bp.listar_clientes'))
 
         # Obtener los datos actuales del banco
         cursor.execute("""
@@ -107,13 +107,13 @@ def edit_cliente(id_cliente):
 
         if not cliente:
             flash("Cliente no encontrada.", "error")
-            return redirect(url_for('listar_clientes'))
+            return redirect(url_for('clientes_bp.listar_clientes'))
 
     except Exception as e:
         if conn:
             conn.rollback()
         flash(f"Error al procesar la solicitud: {e}", "error")
-        return redirect(url_for('listar_clientes'))
+        return redirect(url_for('clientes_bp.listar_clientes'))
     finally:
         if cursor:
             cursor.close()
@@ -135,7 +135,7 @@ def delete_cliente(id_cliente):
         cliente = cursor.fetchone()
         if not cliente:
             flash("La cliente no existe o no es del tipo 'Banco'.", "error")
-            return redirect(url_for('listar_clientes'))
+            return redirect(url_for('clientes_bp.listar_clientes'))
 
         # Intentar eliminar el banco
         cursor.execute("DELETE FROM EntidadComercial WHERE ID_Entidad = %s AND TipoEntidad = 'Cliente'", (id_cliente,))
@@ -152,4 +152,4 @@ def delete_cliente(id_cliente):
         conn.close()
 
     # Redirigir al listado de bancos después de la eliminación
-    return redirect(url_for('listar_clientes'))
+    return redirect(url_for('clientes_bp.listar_clientes'))
