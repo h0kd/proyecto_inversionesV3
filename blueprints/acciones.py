@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, flash, url_for, redirect, jsonify
+from flask import Blueprint, render_template, request, flash, url_for, redirect, jsonify, send_file
 from flask_login import login_required # type: ignore
 from database import get_db_connection
 from decimal import Decimal
@@ -548,3 +548,112 @@ def debug_dividendo(id_dividendo):
     finally:
         cursor.close()
         conn.close()
+
+@acciones_bp.route('/acciones_por_corredora/<nombre_empresa>', methods=['GET', 'POST'])
+@login_required
+def acciones_por_corredora(nombre_empresa):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    corredoras = []
+    acciones = []
+    resultados = []
+    totales = {
+        "cantidad_total": 0,
+        "comision_total": 0,
+        "gasto_total": 0,
+        "valor_total": 0
+    }
+
+    try:
+        # Obtener corredoras registradas en la tabla Entidad
+        cursor.execute("""
+            SELECT DISTINCT e.Nombre
+            FROM Entidad e
+            JOIN Facturas f ON e.id_entidad = f.id_entidad
+            JOIN Acciones a ON f.id_accion = a.id
+            WHERE a.Empresa = %s AND LOWER(e.tipoentidad) = 'corredor'
+        """, (nombre_empresa,))
+        corredoras = [row[0] for row in cursor.fetchall()]
+
+        # Obtener acciones disponibles en la empresa
+        cursor.execute("""
+            SELECT DISTINCT a.Ticker
+            FROM Acciones a
+            JOIN Facturas f ON a.id = f.id_accion
+            WHERE a.Empresa = %s
+        """, (nombre_empresa,))
+        acciones = [row[0] for row in cursor.fetchall()]
+
+        # Filtrar resultados si se selecciona una corredora y/o acción
+        if request.method == 'POST':
+            corredora = request.form.get('corredora')
+            accion = request.form.get('accion')
+
+            query = """
+                SELECT f.NumeroFactura, a.Ticker, f.Cantidad, f.Comision, f.Gasto, 
+                       f.PrecioUnitario, f.Valor, f.adjuntofactura, f.Tipo
+                FROM Facturas f
+                JOIN Acciones a ON f.id_accion = a.id
+                JOIN Entidad e ON f.id_entidad = e.id_entidad
+                WHERE a.Empresa = %s AND LOWER(e.tipoentidad) = 'corredor'
+            """
+            params = [nombre_empresa]
+
+            if corredora:
+                query += " AND e.Nombre = %s"
+                params.append(corredora)
+            if accion:
+                query += " AND a.Ticker = %s"
+                params.append(accion)
+
+            cursor.execute(query, tuple(params))
+            resultados = cursor.fetchall()
+
+            # Calcular totales si hay una acción seleccionada
+            if accion:
+                query_totales = """
+                    SELECT SUM(f.Cantidad), SUM(f.Comision), SUM(f.Gasto), SUM(f.Valor)
+                    FROM Facturas f
+                    JOIN Acciones a ON f.id_accion = a.id
+                    JOIN Entidad e ON f.id_entidad = e.id_entidad
+                    WHERE a.Empresa = %s AND a.Ticker = %s AND LOWER(e.tipoentidad) = 'corredor'
+                """
+                params_totales = [nombre_empresa, accion]
+
+                if corredora:  # Filtrar por corredora si está seleccionada
+                    query_totales += " AND e.Nombre = %s"
+                    params_totales.append(corredora)
+
+                cursor.execute(query_totales, tuple(params_totales))
+                total_result = cursor.fetchone()
+                if total_result:
+                    totales["cantidad_total"] = total_result[0] or 0
+                    totales["comision_total"] = float(total_result[1] or 0)
+                    totales["gasto_total"] = float(total_result[2] or 0)
+                    totales["valor_total"] = float(total_result[3] or 0)
+
+
+    except Exception as e:
+        flash(f"Error al obtener datos: {e}", "error")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return render_template(
+        'acciones/acciones_por_corredora.html',
+        nombre_empresa=nombre_empresa,
+        corredoras=corredoras,
+        acciones=acciones,
+        resultados=resultados,
+        totales=totales
+    )
+
+
+
+@acciones_bp.route('/descargar_pdf')
+@login_required
+def descargar_pdf():
+    pdf_path = request.args.get('pdf_path')
+    return send_file(pdf_path, as_attachment=True)
+

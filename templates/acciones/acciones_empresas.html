@@ -116,7 +116,12 @@
       </div>
     </nav>
 		<div class="container mt-5">
+      
 			<h1>Acciones de {{ nombre_empresa }}</h1>
+      <a href="{{ url_for('acciones.acciones_por_corredora', nombre_empresa=nombre_empresa) }}" class="btn btn-info">
+        Acciones por Corredora
+      </a>
+      
       <table class="table table-dark table-striped mt-3">
         <thead>
             <tr class="text-center">
