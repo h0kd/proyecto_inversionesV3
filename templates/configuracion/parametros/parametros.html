@@ -13,10 +13,6 @@
       rel="stylesheet"
     />
     <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/styles.css') }}"
-    />
-    <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
@@ -27,71 +23,79 @@
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-          <a class="navbar-brand" href="/">Sistema de Inversiones</a>
-          <button
-            class="navbar-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarNav"
-            aria-controls="navbarNav"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
-          >
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav mx-auto">
-              <li class="nav-item mx-3">
-                <a class="nav-link" href="/acciones">Acciones</a>
-              </li>
-              <li class="nav-item mx-3">
-                <a class="nav-link" href="/fondos_mutuos">FFMM</a>
-              </li>
-              <li class="nav-item mx-3">
-                <a class="nav-link" href="/deposito_a_plazo">DP</a>
-              </li>
-              <li class="nav-item mx-3">
-                <a class="nav-link" href="/boletas_garantia"
-                  >Boletas de Garantia</a
-                >
-              </li>
-              <li class="nav-item mx-3">
-                <a class="nav-link" href="/polizas">Polizas de Seguro</a>
-              </li>
-              <!-- Menú Desplegable -->
-              <li class="nav-item dropdown mx-3">
-                <a
-                  class="nav-link dropdown-toggle"
-                  href="#"
-                  id="navbarDropdown"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  Ingresos
-                </a>
-                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                  <li><a class="dropdown-item" href="/bancos">Bancos</a></li>
-                  <li><a class="dropdown-item" href="/empresas">Empresas</a></li>
-                  <li><a class="dropdown-item" href="/corredores">Corredores de Bolsa</a></li>
-                  <li><a class="dropdown-item" href="/companias">Compañías de Seguro</a></li>
-                  <li><a class="dropdown-item" href="/clientes">Clientes</a></li>
-                  <li><a class="dropdown-item" href="/parametros">Parámetros</a></li>
-                </ul>
-              </li>
-            </ul>
-            <!-- Enlace al lado derecho -->
-            </ul>
-            <!-- Enlace al lado derecho -->
-            <ul class="navbar-nav ms-auto">
-              <li class="nav-item">
-                <a class="nav-link" href="/logout">Cerrar Sesión</a>
-              </li>
-            </ul>
-          </div>
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/">Sistema de Inversiones</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav mx-auto">
+            <!-- Menú Desplegable -->
+            <li class="nav-item dropdown mx-3">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="navbarDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Ingresos
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <li><a class="dropdown-item" href="/bancos">Bancos</a></li>
+                <li><a class="dropdown-item" href="/empresas">Empresas</a></li>
+                <li><a class="dropdown-item" href="/corredores">Corredores de Bolsa</a></li>
+                <li><a class="dropdown-item" href="/companias">Compañías de Seguro</a></li>
+                <li><a class="dropdown-item" href="/clientes">Clientes</a></li>
+                <li><a class="dropdown-item" href="/parametros">Parámetros</a></li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown mx-3">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="navbarDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Inversiones
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <li><a class="dropdown-item" href="/acciones">Acciones</a></li>
+                <li><a class="dropdown-item" href="/fondos_mutuos">FFMM</a></li>
+                <li><a class="dropdown-item" href="/deposito_a_plazo">DP</a></li>
+              </ul>
+            </li>
+            <li class="nav-item mx-3">
+              <a class="nav-link" href="/boletas_garantia"
+                >Boletas de Garantia</a
+              >
+            </li>
+            <li class="nav-item mx-3">
+              <a class="nav-link" href="/polizas">Polizas de Seguro</a>
+            </li>
+          </ul>
+          <!-- Enlace al lado derecho -->
+          </ul>
+          <!-- Enlace al lado derecho -->
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="/logout">Cerrar Sesión</a>
+            </li>
+          </ul>
         </div>
-      </nav>
+      </div>
+    </nav>
     <h1 class="ms-3">Gestión de Parámetros</h1>
     <div class="mb-3 ms-3">
       <h3>Valor del Dólar Actual (CLP)</h3>
@@ -133,22 +137,20 @@
       <button type="submit" class="btn btn-primary">Guardar</button>
     </form>
 
-    <br /><br />
-
     <!-- Tabla para mostrar parámetros existentes -->
-    <table border="1" cellpadding="5" cellspacing="0">
+    <table class="table table-dark table-striped mt-3">
         <thead class="text-center">
           <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Valor</th>
-            <th>Última Actualización</th>
-            <th>Acciones</th>
+            <th scope="col">ID</th>
+            <th scope="col">Nombre</th>
+            <th scope="col">Valor</th>
+            <th scope="col">Última Actualización</th>
+            <th scope="col">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {% for parametro in parametros %}
-          <tr>
+          <tr class="text-center">
             <td>{{ parametro[0] }}</td>
             <td>{{ parametro[1] }}</td>
             <td>

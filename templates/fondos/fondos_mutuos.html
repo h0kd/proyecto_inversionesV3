@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fondos Mutuos</title>
     <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/styles.css') }}"
-    />
-    <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
       rel="stylesheet"
     />
@@ -121,87 +117,97 @@
       <button type="submit" class="btn btn-primary">Buscar</button>
     </form>
 
-    <table border="1" cellpadding="5" cellspacing="0">
+    <table class="table table-dark table-striped">
       <thead>
-        <tr>
-          <th>
+        <tr class="text-center">
+          <th scope="col">
             <a
               href="?sort_by=ID_Fondo&order={{ 'asc' if sort_by != 'ID_Fondo' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
             >
               ID Fondo
             </a>
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=Nombre&order={{ 'asc' if sort_by != 'Nombre' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
             >
               Nombre
             </a>
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=Empresa&order={{ 'asc' if sort_by != 'Empresa' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
             >
               Empresa
             </a>
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=Banco&order={{ 'asc' if sort_by != 'Banco' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
             >
               Banco
             </a>
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=TipoRiesgo&order={{ 'asc' if sort_by != 'TipoRiesgo' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
             >
               Riesgo
             </a>
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=MontoInvertido&order={{ 'asc' if sort_by != 'MontoInvertido' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
             >
               Monto Invertido
             </a>
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=MontoFinal&order={{ 'asc' if sort_by != 'MontoFinal' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
             >
               Monto Final
             </a>
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=FechaInicio&order={{ 'asc' if sort_by != 'FechaInicio' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
             >
               Fecha Inicio
             </a>
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=FechaTermino&order={{ 'asc' if sort_by != 'FechaTermino' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
             >
               Fecha Término
             </a>
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=Rentabilidad&order={{ 'asc' if sort_by != 'Rentabilidad' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
             >
               Rentabilidad
             </a>
           </th>
-          <th>Comprobante</th>
-          <th>Edicion</th>
+          <th scope="col">Comprobante</th>
+          <th scope="col">Edicion</th>
         </tr>
       </thead>
 
       <tbody>
         {% for fondo in fondos %}
-        <tr>
+        <tr class="text-center">
           <td>{{ fondo[0] }}</td>
           <!-- ID Fondo -->
           <td>{{ fondo[1] }}</td>
@@ -235,7 +241,7 @@
             <a
               href="{{ fondo[10] | replace('\\', '/') }}"
               target="_blank"
-              class="view-file"
+              class="view-file text-danger fs-3"
             >
               <i class="fa-solid fa-file-pdf"></i>
             </a>
@@ -252,7 +258,7 @@
               style="display: inline"
               onsubmit="return confirm('¿Estás seguro de que deseas eliminar este fondo mutuo?');"
             >
-              <button type="submit" style="background-color: red; color: white" class="btn btn-danger">
+              <button type="submit" class="btn btn-danger">
                 Eliminar
               </button>
             </form>

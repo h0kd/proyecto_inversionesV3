@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Depósito a Plazo</title>
     <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/styles.css') }}"
-    />
-    <link
       href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap"
       rel="stylesheet"
     />
@@ -115,76 +111,86 @@
     </a>
 
     <!-- Tabla de depósitos -->
-    <table border="1" cellpadding="5" cellspacing="0">
+    <table class="table table-dark table-striped">
       <thead>
-        <tr>
-          <th>
+        <tr class="text-center">
+          <th scope="col">
             <a
               href="?sort_by=ID_Deposito&order={{ 'asc' if sort_by != 'ID_Deposito' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
               >N° Depósito</a
             >
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=Empresa&order={{ 'asc' if sort_by != 'Empresa' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
               >Beneficiario</a
             >
           </th>
           <th>
             <a
               href="?sort_by=Banco&order={{ 'asc' if sort_by != 'Banco' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
               >Banco</a
             >
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=FechaEmision&order={{ 'asc' if sort_by != 'FechaEmision' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
               >Fecha Emisión</a
             >
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=FechaVencimiento&order={{ 'asc' if sort_by != 'FechaVencimiento' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
               >Fecha Vencimiento</a
             >
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=Moneda&order={{ 'asc' if sort_by != 'Moneda' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
               >Moneda</a
             >
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=MontoInicial&order={{ 'asc' if sort_by != 'MontoInicial' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
               >Monto Inicial</a
             >
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=TipoDeposito&order={{ 'asc' if sort_by != 'TipoDeposito' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
               >Tipo Depósito</a
             >
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=CapitalRenovacion&order={{ 'asc' if sort_by != 'CapitalRenovacion' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
               >Capital Renovación</a
             >
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=PlazoRenovacion&order={{ 'asc' if sort_by != 'PlazoRenovacion' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
               >Plazo Renovación</a
             >
           </th>
-          <th>Comprobante</th>
-          <th>Acciones</th>
+          <th scope="col">Comprobante</th>
+          <th scope="col">Acciones</th>
         </tr>
       </thead>
       <tbody>
         {% for deposito in depositos %}
-        <tr>
+        <tr class="text-center">
           <td>{{ deposito[0] }}</td>
           <td>{{ deposito[1] }}</td>
           <td>{{ deposito[2] }}</td>
@@ -200,7 +206,7 @@
             <a
               href="{{ deposito[11] | replace('\\', '/') }}"
               target="_blank"
-              class="view-file"
+              class="view-file text-danger fs-3"
               title="Abrir archivo PDF"
               ><i class="fa-solid fa-file-pdf"></i
             ></a>

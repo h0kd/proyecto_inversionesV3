@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Clientes</title>
     <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/styles.css') }}"
-    />
-    <link
       href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap"
       rel="stylesheet"
     />
@@ -113,20 +109,20 @@
     <br /><br />
 
     <!-- Tabla de bancos -->
-    <table border="1" cellpadding="5" cellspacing="0">
+    <table class="table table-dark table-striped">
       <thead>
         <tr class="text-center">
-          <th>ID</th>
-          <th>Rut</th>
-          <th>Nombre</th>
-          <th>Fono Movil</th>
-          <th>Email</th>
-          <th>Acciones</th>
+          <th scope="col">ID</th>
+          <th scope="col">Rut</th>
+          <th scope="col">Nombre</th>
+          <th scope="col">Fono Movil</th>
+          <th scope="col">Email</th>
+          <th scope="col">Acciones</th>
         </tr>
       </thead>
       <tbody>
         {% for cliente in clientes %}
-        <tr>
+        <tr class="text-center">
           <td>{{ cliente[0] }}</td>
           <td>{{ cliente[1] }}</td>
           <td>{{ cliente[2] }}</td>

@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pólizas de Seguro</title>
     <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/styles.css') }}"
-    />
-    <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
       rel="stylesheet"
     />
@@ -109,51 +105,56 @@
     <a href="/add_poliza"><button class="btn btn-primary ms-3">Agregar Póliza</button></a>
     <br /><br />
 
-    <table border="1" cellpadding="5" cellspacing="0">
+    <table class="table table-dark table-striped">
       <thead>
-        <tr>
-          <th>
+        <tr class="text-center">
+          <th scope="col">
             <a
               href="?sort_by=Numero&order={{ 'asc' if sort_by != 'Numero' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
             >
               Número
             </a>
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=TipoAsegurado&order={{ 'asc' if sort_by != 'TipoAsegurado' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
             >
               Tipo Asegurado
             </a>
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=FechaInicio&order={{ 'asc' if sort_by != 'FechaInicio' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
             >
               Fecha Inicio
             </a>
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=FechaTermino&order={{ 'asc' if sort_by != 'FechaTermino' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
             >
               Fecha Término
             </a>
           </th>
-          <th>
+          <th scope="col">
             <a
               href="?sort_by=Monto&order={{ 'asc' if sort_by != 'Monto' or order == 'desc' else 'desc' }}"
+              class="text-light text-decoration-none"
             >
               Monto
             </a>
           </th>
-          <th>Adjunto</th>
-          <th>Acciones</th>
+          <th scope="col">Adjunto</th>
+          <th scope="col">Acciones</th>
         </tr>
       </thead>
       <tbody>
         {% for poliza in polizas %}
-        <tr>
+        <tr class="text-center">
           <td>{{ poliza[0] }}</td>
           <td>{{ poliza[1] }}</td>
           <td>{{ poliza[2] }}</td>
@@ -170,14 +171,14 @@
             {% else %} Sin Adjunto {% endif %}
           </td>
           <td>
-            <a href="/edit_poliza/{{ poliza[0] }}"><button>Editar</button></a>
+            <a href="/edit_poliza/{{ poliza[0] }}"><button class="btn btn-warning">Editar</button></a>
             <form
               action="/delete_poliza/{{ poliza[0] }}"
               method="POST"
               style="display: inline"
               onsubmit="return confirm('¿Estás seguro de eliminar esta póliza?');"
             >
-              <button type="submit" style="background-color: red; color: white">
+              <button type="submit" class="btn btn-danger">
                 Eliminar
               </button>
             </form>
