@@ -8,16 +8,15 @@ import plotly.io as pio
 import datetime
 
 
-acciones_bp = Blueprint('acciones', __name__)  # Crea el Blueprint
+acciones_bp = Blueprint('acciones', __name__)  
 
 @acciones_bp.route('/acciones', methods=['GET'])
 @login_required
 def acciones():
-    # Conectar a la base de datos
+
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Consulta SQL
     acciones_query = """
         SELECT 
         e.Nombre AS NombreEntidad,
@@ -30,7 +29,6 @@ def acciones():
         ORDER BY e.Nombre;
     """
 
-    # Consulta para calcular el total en dinero de todas las compras
     total_query = """
         SELECT 
             SUM(CASE WHEN f.Tipo = 'Compra' THEN f.Valor ELSE 0 END) AS TotalCompras,
@@ -40,8 +38,6 @@ def acciones():
         WHERE e.TipoEntidad = 'Empresa';
     """
 
-
-    # Grafico
     grafico_query = """
         SELECT 
             e.Nombre AS NombreENtidad,
@@ -72,7 +68,6 @@ def acciones():
         total_ventas = 0
         grafico_datos = []
 
-    # Agregar índices
     acciones_con_indices = [(idx + 1, *accion) for idx, accion in enumerate(acciones)]
 
     cursor.close()
@@ -85,20 +80,16 @@ def acciones():
 
 
 def format_rut(rut):
-    # Convertir el RUT a string, quitar puntos y guión si existen
     rut = str(rut).replace(".", "").replace("-", "")
 
-    if len(rut) < 2:  # Validar que el RUT tiene al menos dos caracteres
+    if len(rut) < 2:  
         return rut
 
-    # Formatear: separar el dígito verificador (último dígito)
     cuerpo = rut[:-1]
     dv = rut[-1]
 
-    # Agregar puntos cada tres dígitos, desde el final
     cuerpo_formateado = "{:,}".format(int(cuerpo)).replace(",", ".")
 
-    # Retornar el RUT en el formato esperado
     return f"{cuerpo_formateado}-{dv}"
 
 @acciones_bp.app_template_filter('format_rut')
@@ -109,11 +100,10 @@ def format_rut_filter(rut):
 @acciones_bp.route('/empresa/<nombre_empresa>', methods=['GET'])
 @login_required
 def detalle_empresa(nombre_empresa):
-    # Conectar a la base de datos
+
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Consulta para obtener las acciones relacionadas con la empresa seleccionada y el promedio ponderado
     acciones_query = """
         WITH DividendosTotales AS (
             SELECT 
@@ -148,7 +138,6 @@ def detalle_empresa(nombre_empresa):
         ORDER BY a.Ticker;
     """
 
-
     grafico_query = """
         SELECT
             f.NombreActivo AS Ticker,
@@ -176,7 +165,6 @@ def detalle_empresa(nombre_empresa):
         GROUP BY f.NombreActivo
         ORDER BY Ticker;
     """
-    
 
     grafico_data = []
     promedio_data = []
@@ -205,6 +193,7 @@ def detalle_empresa(nombre_empresa):
 
         promedio_labels = [promedio[0] for promedio in promedio_data]
         promedio_data = [promedio[1] for promedio in promedio_data]
+
     except Exception as e:
         print(f"Error al obtener las acciones de la empresa '{nombre_empresa}': {e}")
         flash(f"Error al obtener las acciones de la empresa '{nombre_empresa}'.", "error")
@@ -222,15 +211,14 @@ def detalle_empresa(nombre_empresa):
 @acciones_bp.route('/acciones_por_ticker/<nombre_empresa>/<ticker>', methods=['GET'])
 @login_required
 def acciones_por_ticker(nombre_empresa, ticker):
-    # Conectar a la base de datos
+
     conn = get_db_connection()
     cursor = conn.cursor()
 
     acciones = []
     try:
-        print(f"Nombre empresa: {nombre_empresa}, Ticker: {ticker}")  # Depuración
+        print(f"Nombre empresa: {nombre_empresa}, Ticker: {ticker}")  
 
-        # Consulta SQL ajustada para mostrar compras y ventas
         query = """
         SELECT 
             f.NumeroFactura, 
@@ -254,12 +242,14 @@ def acciones_por_ticker(nombre_empresa, ticker):
         WHERE a.Empresa = %s AND a.Ticker = %s
         ORDER BY f.Fecha;
         """
+
         cursor.execute(query, (ticker, nombre_empresa, nombre_empresa, ticker))
         acciones = cursor.fetchall()
-        print(f"Resultados de la consulta: {acciones}")  # Depuración
+        print(f"Resultados de la consulta: {acciones}")
+
     except Exception as e:
         flash(f"Error al obtener acciones para el ticker {ticker}: {e}", "error")
-        print(f"Error al ejecutar la consulta: {e}")  # Depuración
+        print(f"Error al ejecutar la consulta: {e}")
     finally:
         cursor.close()
         conn.close()
@@ -278,6 +268,7 @@ def acciones_por_ticker(nombre_empresa, ticker):
 @login_required
 def add_dividendo(ticker, nombre_empresa):
     if request.method == 'POST':
+
         fechacierre = request.form['fecha_cierre']
         fechapago = request.form['fecha_pago']
         valorporaccion = float(request.form['valor_por_accion'])
@@ -287,7 +278,6 @@ def add_dividendo(ticker, nombre_empresa):
         cursor = conn.cursor()
 
         try:
-            # Obtener todas las acciones asociadas al ticker y la empresa
             cursor.execute("""
                 SELECT a.id, SUM(f.Cantidad) AS CantidadTotal
                 FROM Acciones a
@@ -295,13 +285,13 @@ def add_dividendo(ticker, nombre_empresa):
                 WHERE a.Ticker = %s AND a.Empresa = %s
                 GROUP BY a.id
             """, (ticker, nombre_empresa))
+
             acciones = cursor.fetchall()
 
             if not acciones:
                 flash("No se encontraron acciones asociadas a este ticker y empresa.", "error")
                 return redirect(url_for('acciones.detalle_empresa', nombre_empresa=nombre_empresa))
 
-            # Agregar el dividendo para cada id_accion
             for id_accion, cantidad_total in acciones:
                 valortotal = valorporaccion * cantidad_total
 
@@ -319,7 +309,6 @@ def add_dividendo(ticker, nombre_empresa):
             cursor.close()
             conn.close()
 
-        # Redirigir al historial de dividendos (no atado a una factura)
         return redirect(url_for('acciones.historial_dividendos', ticker=ticker, nombre_empresa=nombre_empresa, numero_factura=0))
 
     return render_template(
@@ -333,15 +322,15 @@ def add_dividendo(ticker, nombre_empresa):
 @acciones_bp.route('/historial_dividendos/<ticker>/<nombre_empresa>', methods=['GET'])
 @login_required
 def historial_dividendos(ticker, nombre_empresa):
+
     conn = get_db_connection()
     cursor = conn.cursor()
 
     dividendos = []
     try:
-        # Obtener dividendos para todas las acciones del ticker y empresa
         query = """
             SELECT 
-                d.id_dividendo,       -- Aseguramos que sea el primer campo
+                d.id_dividendo,       
                 d.fechacierre, 
                 d.fechapago, 
                 d.valorporaccion, 
@@ -355,6 +344,7 @@ def historial_dividendos(ticker, nombre_empresa):
 
         cursor.execute(query, (ticker, nombre_empresa))
         dividendos = cursor.fetchall()
+
     except Exception as e:
         flash(f"Error al obtener el historial de dividendos: {e}", "error")
     finally:
@@ -376,34 +366,34 @@ def editar_dividendo(id_dividendo):
 
     dividendo = None
     ticker = None
-    nombre_empresa = "INNOVACIÓN EMPRESARIAL LTDA."  # Ajusta esto si quieres obtenerlo dinámicamente
+    nombre_empresa = None
     numero_factura = None
 
     try:
+        # Obtener los datos del dividendo y la empresa basada en id_accion
         query = """
-            SELECT id_dividendo, fechacierre, fechapago, valorporaccion, moneda, nombre, id_factura
-            FROM Dividendos
-            WHERE id_dividendo = %s
+            SELECT d.id_dividendo, d.fechacierre, d.fechapago, d.valorporaccion, d.moneda, d.nombre, d.id_factura, a.Empresa
+            FROM Dividendos d
+            JOIN Acciones a ON d.id_accion = a.id
+            WHERE d.id_dividendo = %s
         """
         cursor.execute(query, (id_dividendo,))
-        dividendo = cursor.fetchone()
+        result = cursor.fetchone()
 
-        if dividendo:
-            # Extraer los datos necesarios
-            fechacierre = dividendo[1].strftime("%Y-%m-%d") if dividendo[1] else None
-            fechapago = dividendo[2].strftime("%Y-%m-%d") if dividendo[2] else None
-            ticker = dividendo[5]
-            numero_factura = dividendo[6]
-            # Convertir dividendo a una estructura amigable para la plantilla
-            dividendo = (dividendo[0], fechacierre, fechapago, dividendo[3], dividendo[4])
+        if result:
+            # Extraer datos
+            dividendo_id, fechacierre, fechapago, valorporaccion, moneda, ticker, numero_factura, nombre_empresa = result
+            fechacierre = fechacierre.strftime("%Y-%m-%d") if fechacierre else None
+            fechapago = fechapago.strftime("%Y-%m-%d") if fechapago else None
+            dividendo = (dividendo_id, fechacierre, fechapago, valorporaccion, moneda)
 
         if not dividendo:
             flash("El dividendo no existe.", "warning")
-            return redirect(url_for('acciones.historial_dividendos', ticker=ticker or '', nombre_empresa=nombre_empresa, numero_factura=numero_factura or ''))
+            return redirect(url_for('acciones.historial_dividendos', ticker=ticker or '', nombre_empresa=nombre_empresa or '', numero_factura=numero_factura or ''))
 
     except Exception as e:
         flash(f"Error al obtener el dividendo: {e}", "error")
-        return redirect(url_for('acciones.historial_dividendos', ticker=ticker or '', nombre_empresa=nombre_empresa, numero_factura=numero_factura or ''))
+        return redirect(url_for('acciones.historial_dividendos', ticker=ticker or '', nombre_empresa=nombre_empresa or '', numero_factura=numero_factura or ''))
     finally:
         cursor.close()
         conn.close()
@@ -415,6 +405,8 @@ def editar_dividendo(id_dividendo):
         nombre_empresa=nombre_empresa,
         numero_factura=numero_factura
     )
+
+
 
 
 

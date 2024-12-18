@@ -6,9 +6,7 @@ from helpers.utils import allowed_file
 from flask import current_app
 import os
 
-# Crear el Blueprint
 facturas_bp = Blueprint('facturas', __name__)
-
 
 @facturas_bp.route('/add_factura', methods=['GET', 'POST'])
 @login_required
@@ -23,7 +21,7 @@ def add_factura():
                 id_empresa_emisora = request.form.get('empresa_emisora')
                 nombre_activo = request.form['nombre_activo'].upper()
                 fecha = request.form['fecha']
-                tipo = request.form['tipo'].capitalize()  # Compra o Venta
+                tipo = request.form['tipo'].capitalize()  
                 cantidad = float(request.form['cantidad'])
                 precio_unitario = float(request.form['precio_unitario'])
                 subtotal = cantidad * precio_unitario
@@ -31,7 +29,6 @@ def add_factura():
                 comision = float(request.form.get('comision', 0))
                 gasto = float(request.form.get('gasto', 0))
 
-                # Manejar archivo adjuntofactura
                 adjuntofactura = None
                 if 'adjuntofactura' in request.files and request.files['adjuntofactura'].filename != '':
                     file = request.files['adjuntofactura']
@@ -47,12 +44,10 @@ def add_factura():
                         flash("El archivo no es válido. Por favor, seleccione un archivo permitido.", "error")
                         return redirect(url_for('facturas.add_factura'))
 
-                # Validar campos obligatorios
                 if not id_corredora or not id_empresa_emisora:
                     flash("Por favor, seleccione una corredora y una empresa emisora.", "error")
                     return redirect(url_for('facturas.add_factura'))
 
-                # Obtener el ID de TipoInversion
                 cursor.execute("SELECT ID FROM TipoInversion WHERE Nombre = %s", (tipo,))
                 tipo_inversion_result = cursor.fetchone()
                 if not tipo_inversion_result:
@@ -60,7 +55,6 @@ def add_factura():
                     return redirect(url_for('facturas.add_factura'))
                 id_tipo_inversion = tipo_inversion_result[0]
 
-                # Verificar o crear acción
                 cursor.execute("""
                     SELECT id, Cantidad FROM Acciones 
                     WHERE Ticker = %s AND Empresa = (
@@ -76,13 +70,12 @@ def add_factura():
                         RETURNING id
                     """, (nombre_activo, nombre_activo, id_empresa_emisora))
                     accion_id = cursor.fetchone()[0]
-                    cantidad_actual = 0  # No hay cantidad previa porque es nueva
+                    cantidad_actual = 0  
                     conn.commit()
                 else:
                     accion_id = accion_result[0]
-                    cantidad_actual = float(accion_result[1])  # Convertir a float para operaciones
+                    cantidad_actual = float(accion_result[1]) 
 
-                # Actualizar la cantidad en Acciones según el tipo de factura
                 if tipo == 'Compra':
                     nueva_cantidad = cantidad_actual + cantidad
                 elif tipo == 'Venta':
@@ -97,7 +90,6 @@ def add_factura():
                     WHERE id = %s
                 """, (nueva_cantidad, accion_id))
 
-                # Insertar la factura
                 cursor.execute("""
                     INSERT INTO Facturas 
                     (NumeroFactura, ID_Entidad, ID_Entidad_Comercial, Fecha, Tipo, Cantidad, PrecioUnitario, SubTotal, Valor, NombreActivo, Comision, Gasto, AdjuntoFactura, ID_TipoInversion, Tipo_Entidad, id_accion)
@@ -118,7 +110,6 @@ def add_factura():
                 flash(f"Error al agregar la factura: {e}", "error")
                 return redirect(url_for('facturas.add_factura'))
 
-        # Método GET: Mostrar el formulario
         cursor.execute("SELECT ID_Entidad, Nombre FROM Entidad WHERE TipoEntidad = 'Corredor'")
         corredoras = cursor.fetchall()
 
@@ -145,8 +136,8 @@ def add_factura():
 @facturas_bp.route('/listado_facturas', methods=['GET'])
 @login_required
 def listado_facturas():
-    sort_by = request.args.get('sort_by', 'NumeroFactura')  # Ordenar por NumeroFactura por defecto
-    order = request.args.get('order', 'asc')  # Orden ascendente por defecto
+    sort_by = request.args.get('sort_by', 'NumeroFactura') 
+    order = request.args.get('order', 'asc') 
 
     valid_columns = ['NumeroFactura', 'NombreEntidad', 'NombreActivo', 'Tipo', 'Fecha', 'Cantidad', 'PrecioUnitario', 'SubTotal', 'Valor']
     if sort_by not in valid_columns:
@@ -183,7 +174,7 @@ def listado_facturas():
         cursor.execute(query)
         facturas = cursor.fetchall()
     except Exception as e:
-        print(f"Error en la consulta: {e}")  # Debug
+        print(f"Error en la consulta: {e}")  
         flash(f"Error al listar las facturas: {e}", "error")
         facturas = []
 
@@ -201,7 +192,6 @@ def editar_factura(numero_factura):
 
         if request.method == 'POST':
             try:
-                # Recibir datos del formulario
                 nuevo_numero_factura = request.form['nuevo_numero']
                 nombre_activo = request.form['nombre_activo']
                 tipo = request.form['tipo']
@@ -235,7 +225,6 @@ def editar_factura(numero_factura):
                 return redirect(url_for('facturas.editar_factura', numero_factura=numero_factura))
 
         else:
-            # Obtener datos de la factura
             cursor.execute("""
                 SELECT NumeroFactura, NombreActivo, Tipo, Fecha, Cantidad, Comision, Gasto, Tipo_Entidad, 
                        COALESCE(ID_Entidad, ID_Entidad_Comercial) AS ID_Entidad,
@@ -249,7 +238,6 @@ def editar_factura(numero_factura):
                 flash("Factura no encontrada.", "error")
                 return redirect(url_for('facturas.listado_facturas'))
 
-            # Obtener datos de Corredores y Empresas
             cursor.execute("SELECT ID_Entidad, Nombre FROM Entidad WHERE TipoEntidad = 'Corredor'")
             corredores = cursor.fetchall()
 
@@ -275,7 +263,6 @@ def eliminar_factura(numero_factura):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Eliminar la factura
     cursor.execute("DELETE FROM Facturas WHERE NumeroFactura = %s", (numero_factura,))
     conn.commit()
     conn.close()
