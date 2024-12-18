@@ -2,24 +2,17 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required
 from database import get_db_connection
 from werkzeug.utils import secure_filename
-from datetime import datetime
-from helpers.utils import allowed_file
-from flask import current_app
 import os
 
-# Crear el Blueprint
 fondos_mutuos_bp = Blueprint('fondos_mutuos', __name__)
-
 
 @fondos_mutuos_bp.route('/fondos_mutuos', methods=['GET'])
 @login_required
 def fondos_mutuos():
-    # Capturar parámetros de ordenamiento y búsqueda
-    sort_by = request.args.get('sort_by', 'f.ID_Fondo')  # Ordenar por ID_Fondo por defecto
-    order = request.args.get('order', 'asc')  # Orden ascendente por defecto
-    search_query = request.args.get('search', '').strip()  # Capturar la búsqueda
+    sort_by = request.args.get('sort_by', 'f.ID_Fondo')  
+    order = request.args.get('order', 'asc')  
+    search_query = request.args.get('search', '').strip()  
 
-    # Validar columnas permitidas para evitar SQL injection
     valid_columns = {
         'ID_Fondo': 'f.ID_Fondo',
         'Nombre': 'f.Nombre',
@@ -37,11 +30,9 @@ def fondos_mutuos():
     if order not in ['asc', 'desc']:
         order = 'asc'
 
-    # Conexión y consulta
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Consulta base
     query = f"""
     SELECT 
         f.ID_Fondo, 
@@ -64,14 +55,11 @@ def fondos_mutuos():
     JOIN Entidad b ON f.ID_Banco = b.ID_Entidad
     """
 
-    # Agregar filtro de búsqueda si se proporciona un término
     if search_query:
         query += " WHERE e.Nombre ILIKE %s"
 
-    # Ordenar por la columna especificada
     query += f" ORDER BY {sort_column} {order};"
 
-    # Ejecutar la consulta
     if search_query:
         cursor.execute(query, (f"%{search_query}%",))
     else:
@@ -91,36 +79,31 @@ def add_fondo_mutuo():
 
     if request.method == 'POST':
         try:
-            print(request.form)  # Debug
-            # Capturar datos del formulario
+            print(request.form) 
             nombre_fondo = request.form['nombre_fondo'].upper()
             monto_invertido = float(request.form.get('monto_invertido'))
             monto_final = request.form.get('monto_final')
             if monto_final:
                 monto_final = float(monto_final)
             else:
-                monto_final = None  # Para valores nulos en SQL
+                monto_final = None  
             riesgo = request.form['riesgo']
             fecha_inicio = request.form['fecha_inicio']
             fecha_termino = request.form.get('fecha_termino')
             if not fecha_termino:
                 fecha_termino = None
 
-            # IDs seleccionados de empresa y banco
             id_empresa = request.form['nombre_empresa']
             id_banco = request.form['nombre_banco']
 
-            # Manejar archivo comprobante
             documento = None
             if 'comprobante' in request.files:
                 file = request.files['comprobante']
                 if file and file.filename != '':
-                    # Asegurar nombre del archivo
                     filename = secure_filename(file.filename)
                     documento = os.path.join('static/uploads', filename)
                     file.save(documento)
 
-            # Insertar fondo mutuo en la base de datos
             cursor.execute("""
                 INSERT INTO FondosMutuos 
                 (Nombre, MontoInvertido, MontoFinal, Rentabilidad, TipoRiesgo, FechaInicio, FechaTermino, ID_Entidad, ID_Banco, Comprobante)
@@ -135,7 +118,6 @@ def add_fondo_mutuo():
             conn.rollback()
             flash(f"Error al agregar el fondo mutuo: {e}", "error")
 
-    # Cargar empresas y bancos para los selects
     try:
         cursor.execute("SELECT ID_Entidad, Nombre FROM EntidadComercial WHERE TipoEntidad = 'Empresa'")
         empresas = cursor.fetchall()
@@ -161,7 +143,6 @@ def edit_fondo_mutuo(id_fondo):
     cursor = conn.cursor()
 
     if request.method == 'POST':
-        # Capturar datos del formulario
         id_empresa = request.form['nombre_empresa']
         id_banco = request.form['nombre_banco']
         nombre_fondo = request.form['nombre_fondo'].upper()
@@ -172,22 +153,18 @@ def edit_fondo_mutuo(id_fondo):
         fecha_inicio = request.form['fecha_inicio']
         fecha_termino = request.form.get('fecha_termino')
 
-        # Manejo del archivo adjunto
         documento = None
         if 'comprobante' in request.files:
             file = request.files['comprobante']
             if file and file.filename != '':
-                # Si hay un nuevo archivo, lo guardamos
                 filename = secure_filename(file.filename)
                 documento = os.path.join('static/uploads', filename)
                 file.save(documento)
             else:
-                # Si no se adjunta un nuevo archivo, conservar el archivo actual
                 cursor.execute("SELECT Comprobante FROM FondosMutuos WHERE ID_Fondo = %s", (id_fondo,))
                 documento = cursor.fetchone()[0]
 
         try:
-            # Actualizar el fondo mutuo en la base de datos
             cursor.execute("""
                 UPDATE FondosMutuos
                 SET ID_Entidad = %s, ID_Banco = %s, Nombre = %s, MontoInvertido = %s,
@@ -207,7 +184,6 @@ def edit_fondo_mutuo(id_fondo):
 
         return redirect(url_for('fondos_mutuos.fondos_mutuos'))
 
-    # Si es GET, cargar los datos existentes del fondo
     cursor.execute("""
         SELECT fm.ID_Entidad, fm.ID_Banco, fm.Nombre, fm.MontoInvertido, fm.MontoFinal, 
                fm.TipoRiesgo, fm.FechaInicio, fm.FechaTermino, fm.Comprobante,
@@ -219,7 +195,6 @@ def edit_fondo_mutuo(id_fondo):
     """, (id_fondo,))
     fondo = cursor.fetchone()
 
-    # Obtener datos para los selects
     cursor.execute("SELECT ID_Entidad, Nombre FROM EntidadComercial WHERE TipoEntidad = 'Empresa'")
     empresas = cursor.fetchall()
     cursor.execute("SELECT ID_Entidad, Nombre FROM Entidad WHERE TipoEntidad = 'Banco'")
@@ -239,7 +214,6 @@ def delete_fondo_mutuo(id_fondo):
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Eliminar el fondo mutuo
         cursor.execute("DELETE FROM FondosMutuos WHERE ID_Fondo = %s", (id_fondo,))
         conn.commit()
         flash("Fondo mutuo eliminado exitosamente.", "success")
@@ -250,7 +224,6 @@ def delete_fondo_mutuo(id_fondo):
         cursor.close()
         conn.close()
 
-    # Redirigir al listado de fondos mutuos
     return redirect(url_for('fondos_mutuos.fondos_mutuos'))
 
 
@@ -265,7 +238,6 @@ def agregar_entidad():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Insertar según el tipo de entidad
         if tipo_entidad == "Banco":
             cursor.execute("""
                 INSERT INTO Entidad (Rut, Nombre, TipoEntidad) 

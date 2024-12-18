@@ -1,23 +1,17 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required # type: ignore
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_required 
 from database import get_db_connection
 
-# Crear el Blueprint
 empresas_bp = Blueprint('empresas_bp', __name__)
 
 
 @empresas_bp.route('/empresas', methods=['GET'])
 @login_required
 def listar_empresas():
-    """
-    Muestra un listado de todas las empresas registrados en la base de datos.
-    """
     try:
-        # Conectar a la base de datos
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Consultar todos las empresas
         cursor.execute("""
             SELECT ID_Entidad, Rut, Nombre, FonoMovil, Email
             FROM EntidadComercial
@@ -36,14 +30,12 @@ def listar_empresas():
         if conn:
             conn.close()
 
-    # Renderizar la plantilla con las empresas
     return render_template('configuracion/empresas/empresas.html', empresas=empresas)
 
 @empresas_bp.route('/empresas/add', methods=['GET', 'POST'])
 @login_required
 def add_empresa():
     if request.method == 'POST':
-        # Capturar datos del formulario
         rut = request.form['rut']
         nombre = request.form['nombre'].upper()
         fono_fijo = request.form['fono_fijo']
@@ -54,7 +46,6 @@ def add_empresa():
             conn = get_db_connection()
             cursor = conn.cursor()
 
-            # Insertar en la tabla Entidad con TipoEntidad = 'Banco'
             cursor.execute("""
                 INSERT INTO EntidadComercial (Rut, Nombre, FonoFijo, FonoMovil, Email, TipoEntidad)
                 VALUES (%s, %s, %s, %s, %s, 'Empresa')
@@ -80,14 +71,12 @@ def delete_empresa(id_empresa):
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Comprobar si el banco existe antes de eliminar
         cursor.execute("SELECT * FROM EntidadComercial WHERE ID_Entidad = %s AND TipoEntidad = 'Empresa'", (id_empresa,))
         empresa = cursor.fetchone()
         if not empresa:
             flash("La empresa no existe o no es del tipo 'Banco'.", "error")
             return redirect(url_for('listar_empresas'))
 
-        # Intentar eliminar el banco
         cursor.execute("DELETE FROM EntidadComercial WHERE ID_Entidad = %s AND TipoEntidad = 'Empresa'", (id_empresa,))
         conn.commit()
 
@@ -101,7 +90,6 @@ def delete_empresa(id_empresa):
         cursor.close()
         conn.close()
 
-    # Redirigir al listado de bancos después de la eliminación
     return redirect(url_for('empresas_bp.listar_empresas'))
 
 @empresas_bp.route('/empresas/edit/<int:id_empresa>', methods=['GET', 'POST'])
@@ -112,14 +100,12 @@ def edit_empresa(id_empresa):
         cursor = conn.cursor()
 
         if request.method == 'POST':
-            # Capturar datos del formulario
             rut = request.form['rut']
             nombre = request.form['nombre']
-            email = request.form.get('email')  # Opcional
-            fono_fijo = request.form.get('fono_fijo')  # Opcional
-            fono_movil = request.form.get('fono_movil')  # Opcional
+            email = request.form.get('email') 
+            fono_fijo = request.form.get('fono_fijo')  
+            fono_movil = request.form.get('fono_movil')  
 
-            # Actualizar el banco
             cursor.execute("""
                 UPDATE EntidadComercial
                 SET Rut = %s, Nombre = %s, Email = %s, FonoFijo = %s, FonoMovil = %s
@@ -130,7 +116,6 @@ def edit_empresa(id_empresa):
             flash("Empresa actualizado exitosamente.", "success")
             return redirect(url_for('empresas_bp.listar_empresas'))
 
-        # Obtener los datos actuales del banco
         cursor.execute("""
             SELECT Rut, Nombre, Email, FonoFijo, FonoMovil
             FROM EntidadComercial

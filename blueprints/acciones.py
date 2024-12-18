@@ -1,11 +1,6 @@
 from flask import Blueprint, render_template, request, flash, url_for, redirect, jsonify, send_file
-from flask_login import login_required # type: ignore
+from flask_login import login_required 
 from database import get_db_connection
-from decimal import Decimal
-import pandas as pd
-import plotly.express as px
-import plotly.io as pio
-import datetime
 
 
 acciones_bp = Blueprint('acciones', __name__)  
@@ -361,6 +356,7 @@ def historial_dividendos(ticker, nombre_empresa):
 @acciones_bp.route('/editar_dividendo/<int:id_dividendo>', methods=['GET'])
 @login_required
 def editar_dividendo(id_dividendo):
+
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -370,7 +366,6 @@ def editar_dividendo(id_dividendo):
     numero_factura = None
 
     try:
-        # Obtener los datos del dividendo y la empresa basada en id_accion
         query = """
             SELECT d.id_dividendo, d.fechacierre, d.fechapago, d.valorporaccion, d.moneda, d.nombre, d.id_factura, a.Empresa
             FROM Dividendos d
@@ -381,7 +376,6 @@ def editar_dividendo(id_dividendo):
         result = cursor.fetchone()
 
         if result:
-            # Extraer datos
             dividendo_id, fechacierre, fechapago, valorporaccion, moneda, ticker, numero_factura, nombre_empresa = result
             fechacierre = fechacierre.strftime("%Y-%m-%d") if fechacierre else None
             fechapago = fechapago.strftime("%Y-%m-%d") if fechapago else None
@@ -406,17 +400,14 @@ def editar_dividendo(id_dividendo):
         numero_factura=numero_factura
     )
 
-
-
-
-
 @acciones_bp.route('/eliminar_dividendo/<int:id_dividendo>', methods=['POST'])
 @login_required
 def eliminar_dividendo(id_dividendo):
+
     conn = get_db_connection()
     cursor = conn.cursor()
+
     try:
-        # Depuración: imprime el ID recibido
         print(f"Intentando eliminar dividendo con ID: {id_dividendo}")
         cursor.execute("DELETE FROM Dividendos WHERE id_dividendo = %s", (id_dividendo,))
         conn.commit()
@@ -428,7 +419,6 @@ def eliminar_dividendo(id_dividendo):
         cursor.close()
         conn.close()
 
-    # Redirige al historial de dividendos o página previa
     return redirect(request.referrer or url_for('acciones.historial_dividendos'))
 
 
@@ -436,14 +426,14 @@ def eliminar_dividendo(id_dividendo):
 @acciones_bp.route('/actualizar_dividendo/<int:id_dividendo>', methods=['POST'])
 @login_required
 def actualizar_dividendo(id_dividendo):
-    # Obtener valores del formulario
+
     fechacierre = request.form['fecha_cierre']
     fechapago = request.form['fecha_pago']
     valorporaccion = float(request.form['valor_por_accion'])
     moneda = request.form['moneda']
     ticker = request.form['ticker']
     nombre_empresa = request.form['nombre_empresa']
-    numero_factura = request.form.get('numero_factura')  # Obtener de forma segura
+    numero_factura = request.form.get('numero_factura')  
 
     print("Valores recibidos del formulario:")
     print("fechacierre:", fechacierre)
@@ -456,8 +446,8 @@ def actualizar_dividendo(id_dividendo):
 
     conn = get_db_connection()
     cursor = conn.cursor()
+
     try:
-        # Obtener cantidad total de acciones asociadas
         cursor.execute("""
             SELECT SUM(Cantidad) 
             FROM Facturas f
@@ -465,15 +455,13 @@ def actualizar_dividendo(id_dividendo):
             WHERE d.id_dividendo = %s
         """, (id_dividendo,))
         resultado = cursor.fetchone()
-        cantidad_total_acciones = float(resultado[0] or 0)  # Convertir a float
+        cantidad_total_acciones = float(resultado[0] or 0)
 
         print("Cantidad total de acciones asociadas:", cantidad_total_acciones)
 
-        # Calcular valor total
         valortotal = valorporaccion * cantidad_total_acciones
         print("Valor total recalculado:", valortotal)
 
-        # Obtener el valor neto de la acción
         cursor.execute("""
             SELECT SUM(CASE 
                         WHEN f.Tipo = 'Compra' THEN f.Cantidad * f.PrecioUnitario + COALESCE(f.Comision, 0)
@@ -483,15 +471,13 @@ def actualizar_dividendo(id_dividendo):
             JOIN Dividendos d ON f.id_accion = d.id_accion
             WHERE d.id_dividendo = %s
         """, (id_dividendo,))
-        valor_neto = float(cursor.fetchone()[0] or 1)  # Convertir a float y evitar división por 0
+        valor_neto = float(cursor.fetchone()[0] or 1)
 
         print("Valor neto calculado:", valor_neto)
 
-        # Calcular rentabilidad
         rentabilidad = round((valortotal / valor_neto) * 100, 2)
         print("Rentabilidad calculada:", rentabilidad)
 
-        # Actualizar el dividendo
         cursor.execute("""
             UPDATE Dividendos
             SET fechacierre = %s, 
@@ -515,7 +501,6 @@ def actualizar_dividendo(id_dividendo):
         cursor.close()
         conn.close()
 
-    # Redirección corregida
     print("Redireccionando al historial de dividendos...")
     return redirect(url_for('acciones.historial_dividendos', ticker=ticker, nombre_empresa=nombre_empresa, numero_factura=numero_factura))
 
@@ -523,6 +508,7 @@ def actualizar_dividendo(id_dividendo):
 
 @acciones_bp.route('/debug_dividendo/<int:id_dividendo>', methods=['GET'])
 def debug_dividendo(id_dividendo):
+
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -534,7 +520,7 @@ def debug_dividendo(id_dividendo):
         """
         cursor.execute(query, (id_dividendo,))
         dividendo = cursor.fetchone()
-        return jsonify(dividendo)  # Devuelve los datos en formato JSON
+        return jsonify(dividendo) 
     except Exception as e:
         return jsonify({"error": str(e)})
     finally:
@@ -544,6 +530,7 @@ def debug_dividendo(id_dividendo):
 @acciones_bp.route('/acciones_por_corredora/<nombre_empresa>', methods=['GET', 'POST'])
 @login_required
 def acciones_por_corredora(nombre_empresa):
+
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -558,7 +545,6 @@ def acciones_por_corredora(nombre_empresa):
     }
 
     try:
-        # Obtener corredoras registradas en la tabla Entidad
         cursor.execute("""
             SELECT DISTINCT e.Nombre
             FROM Entidad e
@@ -568,7 +554,6 @@ def acciones_por_corredora(nombre_empresa):
         """, (nombre_empresa,))
         corredoras = [row[0] for row in cursor.fetchall()]
 
-        # Obtener acciones disponibles en la empresa
         cursor.execute("""
             SELECT DISTINCT a.Ticker
             FROM Acciones a
@@ -577,7 +562,6 @@ def acciones_por_corredora(nombre_empresa):
         """, (nombre_empresa,))
         acciones = [row[0] for row in cursor.fetchall()]
 
-        # Filtrar resultados si se selecciona una corredora y/o acción
         if request.method == 'POST':
             corredora = request.form.get('corredora')
             accion = request.form.get('accion')
@@ -602,7 +586,6 @@ def acciones_por_corredora(nombre_empresa):
             cursor.execute(query, tuple(params))
             resultados = cursor.fetchall()
 
-            # Calcular totales si hay una acción seleccionada
             if accion:
                 query_totales = """
                     SELECT SUM(f.Cantidad), SUM(f.Comision), SUM(f.Gasto), SUM(f.Valor)
@@ -613,7 +596,7 @@ def acciones_por_corredora(nombre_empresa):
                 """
                 params_totales = [nombre_empresa, accion]
 
-                if corredora:  # Filtrar por corredora si está seleccionada
+                if corredora:  
                     query_totales += " AND e.Nombre = %s"
                     params_totales.append(corredora)
 

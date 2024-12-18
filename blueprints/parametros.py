@@ -1,26 +1,22 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required # type: ignore
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_required 
 from database import get_db_connection
 import requests
 
-# Crear el Blueprint
 parametros_bp = Blueprint('parametros_bp', __name__)
 
-
-# Función para obtener el valor actual del dólar (USD -> CLP)
 def obtener_valor_dolar():
-    access_key = "ff4a1918901e515058e82a1826a1f916"  # Tu clave de acceso válida
+    access_key = "ff4a1918901e515058e82a1826a1f916"  
     try:
-        # URL con el endpoint "live" y el parámetro currencies para CLP
         url = f"https://api.exchangerate.host/live?access_key={access_key}&currencies=CLP"
         response = requests.get(url)
 
         if response.status_code == 200:
             data = response.json()
-            print("Respuesta de la API:", data)  # Para depuración
+            print("Respuesta de la API:", data)  
 
             if data.get('success') and 'quotes' in data and 'USDCLP' in data['quotes']:
-                return data['quotes']['USDCLP']  # Extraer la tasa USD -> CLP
+                return data['quotes']['USDCLP']  
             else:
                 print(f"Error en la respuesta de la API: {data}")
                 return None
@@ -31,7 +27,6 @@ def obtener_valor_dolar():
         print(f"Error al obtener el valor del dólar: {e}")
         return None
 
-# Prueba la función
 valor_dolar = obtener_valor_dolar()
 if valor_dolar:
     print(f"El valor actual del dólar en CLP es: {valor_dolar}")
@@ -44,7 +39,7 @@ else:
 @parametros_bp.route('/parametros', methods=['GET', 'POST'])
 @login_required
 def gestionar_parametros():
-    valor_dolar = obtener_valor_dolar()  # Obtiene el valor del dólar en tiempo real
+    valor_dolar = obtener_valor_dolar()  
     
     try:
         conn = get_db_connection()
@@ -54,7 +49,6 @@ def gestionar_parametros():
             nombre = request.form['nombre']
             valor = float(request.form['valor'])
 
-            # Actualizar o insertar parámetros
             cursor.execute("SELECT ID_Parametro FROM Parametros WHERE Nombre = %s", (nombre,))
             parametro = cursor.fetchone()
             if parametro:
@@ -72,11 +66,9 @@ def gestionar_parametros():
                 flash(f"Parámetro '{nombre}' agregado.", "success")
             conn.commit()
 
-        # Obtener todos los parámetros para mostrar en la plantilla
         cursor.execute("SELECT ID_Parametro, Nombre, Valor, FechaActualizacion FROM Parametros")
         parametros = cursor.fetchall()
 
-        # Si existe el valor del dólar, actualízalo automáticamente en la base de datos
         if valor_dolar:
             cursor.execute("""
                 UPDATE Parametros
@@ -107,7 +99,6 @@ def actualizar_parametro():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Actualizar el parámetro en la base de datos
         cursor.execute("""
             UPDATE Parametros
             SET Valor = %s, FechaActualizacion = NOW()
@@ -138,7 +129,6 @@ def eliminar_parametro():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Eliminar el parámetro de la base de datos
         cursor.execute("DELETE FROM Parametros WHERE ID_Parametro = %s", (id_parametro,))
         conn.commit()
 

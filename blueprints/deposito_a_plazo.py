@@ -7,33 +7,27 @@ from datetime import datetime
 from flask import current_app
 import os
 
-# Crear el Blueprint
 deposito_a_plazo_bp = Blueprint('deposito_a_plazo', __name__)
 
 @deposito_a_plazo_bp.route('/deposito_a_plazo', methods=['GET'])
 @login_required
 def deposito_a_plazo():
-    # Obtener los parámetros de ordenación
-    sort_by = request.args.get('sort_by', 'ID_Deposito')  # Ordenar por ID_Deposito por defecto
-    order = request.args.get('order', 'asc')  # Orden ascendente por defecto
+    sort_by = request.args.get('sort_by', 'ID_Deposito')  
+    order = request.args.get('order', 'asc')  
 
-    # Validar las columnas permitidas para ordenar
     valid_columns = [
         'ID_Deposito', 'Empresa', 'Banco', 'FechaEmision', 'FechaVencimiento', 'Moneda',
         'MontoInicial', 'MontoFinal', 'TipoDeposito', 'CapitalRenovacion', 'PlazoRenovacion'
     ]
     if sort_by not in valid_columns:
-        sort_by = 'ID_Deposito'  # Valor por defecto si la columna no es válida
+        sort_by = 'ID_Deposito' 
 
-    # Validar la dirección del orden
     if order not in ['asc', 'desc']:
         order = 'asc'
 
-    # Conexión a la base de datos
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Consulta SQL
     query = f"""
         SELECT 
             d.ID_Deposito,
@@ -59,10 +53,7 @@ def deposito_a_plazo():
     cursor.close()
     conn.close()
 
-    # Renderizar la plantilla con los datos recuperados
     return render_template('depositos/deposito_a_plazo.html', depositos=depositos, sort_by=sort_by, order=order)
-
-# Add Function
 
 @deposito_a_plazo_bp.route('/add_deposito', methods=['GET', 'POST'])
 @login_required
@@ -72,7 +63,6 @@ def add_deposito():
 
     if request.method == 'POST':
         try:
-            # Capturar datos del formulario
             id_deposito = request.form['numero_deposito']
             tipo = request.form['tipo']
             monto = float(request.form['monto'])
@@ -84,7 +74,6 @@ def add_deposito():
             id_banco = request.form['nombre_banco']
             id_beneficiario = request.form['id_beneficiario']
 
-            # Validar campos de renovación solo si el tipo es "Renovable"
             if tipo == "Renovable":
                 capital_renovacion = float(request.form.get('capital_renovacion', 0))
                 fecha_emision_renovacion = request.form.get('fecha_emision_renovacion')
@@ -95,7 +84,6 @@ def add_deposito():
                 total_pagar_renovacion = float(request.form.get('total_pagar_renovacion', 0))
                 reajuste_ganado = float(request.form.get('reajuste_ganado', 0))
             else:
-                # Si no es renovable, estos campos no se guardan
                 capital_renovacion = None
                 fecha_emision_renovacion = None
                 tasa_interes_renovacion = None
@@ -105,7 +93,6 @@ def add_deposito():
                 total_pagar_renovacion = None
                 reajuste_ganado = None
 
-            # Manejo del archivo comprobante
             comprobante = None
             if 'comprobante' in request.files and request.files['comprobante'].filename != '':
                 file = request.files['comprobante']
@@ -117,7 +104,6 @@ def add_deposito():
                     file.save(comprobante_path)
                     comprobante = relative_path
 
-            # Insertar el depósito en la base de datos
             cursor.execute("""
                 INSERT INTO DepositoAPlazo (
                     ID_Deposito, ID_Banco, ID_EntidadComercial, FechaEmision, FechaVencimiento, Moneda, MontoInicial, TipoDeposito, 
@@ -145,7 +131,6 @@ def add_deposito():
 
         return redirect(url_for('deposito_a_plazo.deposito_a_plazo'))
 
-    # Obtener listado de bancos para el select
     try:
         cursor.execute("SELECT ID_Entidad, Nombre FROM Entidad WHERE TipoEntidad = 'Banco'")
         bancos = cursor.fetchall()
@@ -156,10 +141,7 @@ def add_deposito():
     cursor.close()
     conn.close()
 
-    # Renderizar el formulario con la lista de bancos
     return render_template('depositos/add_deposito.html', bancos=bancos)
-
-# Edit Function
 
 @deposito_a_plazo_bp.route('/edit_deposito/<int:id_deposito>', methods=['GET', 'POST'])
 @login_required
@@ -169,8 +151,6 @@ def edit_deposito(id_deposito):
 
     if request.method == 'POST':
         try:
-            # Capturar los datos del formulario
-            # Capturar el ID original y el nuevo ID
             original_id_deposito = request.form.get('original_id_deposito')
             new_id_deposito = request.form.get('id_deposito')
             id_banco = request.form.get('nombre_banco')
@@ -184,7 +164,6 @@ def edit_deposito(id_deposito):
             interes_ganado = float(request.form.get('interes_ganado', '0').strip() or 0)
             reajuste_ganado = float(request.form.get('reajuste_ganado', '0').strip() or 0)
 
-            # Validar campos adicionales si es "Renovable"
             tipo = request.form.get('tipo')
             if tipo == "Renovable":
                 capital_renovacion = float(request.form.get('capital_renovacion', '0').strip() or 0)
@@ -203,7 +182,6 @@ def edit_deposito(id_deposito):
                 fecha_vencimiento_renovacion = None
                 total_pagar_renovacion = None
 
-            # Manejo del archivo adjunto
             comprobante = None
             if 'comprobante' in request.files:
                 file = request.files['comprobante']
@@ -215,7 +193,6 @@ def edit_deposito(id_deposito):
                     cursor.execute("SELECT Comprobante FROM DepositoAPlazo WHERE ID_Deposito = %s", (id_deposito,))
                     comprobante = cursor.fetchone()[0]
 
-            # Verificar datos capturados
             print("Datos preparados para el UPDATE:")
             print("ID original:", original_id_deposito)
             print("Nuevo ID:", new_id_deposito)
@@ -241,7 +218,6 @@ def edit_deposito(id_deposito):
                 "id_deposito": id_deposito
             })
 
-            # Actualizar los datos del depósito
             cursor.execute("""
                 UPDATE DepositoAPlazo
                 SET ID_Deposito = %s, ID_Banco = %s, ID_EntidadComercial = %s, FechaEmision = %s, FechaVencimiento = %s,
@@ -272,7 +248,6 @@ def edit_deposito(id_deposito):
 
         return redirect(url_for('deposito_a_plazo.deposito_a_plazo'))
 
-    # Si es GET, cargar los datos existentes para editar
     try:
         cursor.execute("""
             SELECT 
@@ -306,20 +281,13 @@ def edit_deposito(id_deposito):
         beneficiarios=beneficiarios
     )
 
-
-
-
-# Delete Function
-
 @deposito_a_plazo_bp.route('/delete_deposito/<int:id_deposito>', methods=['POST'])
 @login_required
 def delete_deposito(id_deposito):
-    # Conexión a la base de datos
     conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
-        # Eliminar el depósito por su ID
         cursor.execute("DELETE FROM DepositoAPlazo WHERE ID_Deposito = %s", (id_deposito,))
         conn.commit()
         flash('Depósito eliminado exitosamente.', 'success')
@@ -332,7 +300,6 @@ def delete_deposito(id_deposito):
 
     return redirect(url_for('deposito_a_plazo.deposito_a_plazo'))
 
-
 @deposito_a_plazo_bp.route('/beneficiarios_por_tipo/<tipo>', methods=['GET'])
 @login_required
 def beneficiarios_por_tipo(tipo):
@@ -344,10 +311,10 @@ def beneficiarios_por_tipo(tipo):
         elif tipo == 'cliente':
             cursor.execute("SELECT ID_Entidad, Nombre, Rut FROM EntidadComercial WHERE TipoEntidad = 'Cliente'")
         else:
-            return jsonify([]), 400  # Tipo inválido
+            return jsonify([]), 400  
 
         beneficiarios = [{'id': row[0], 'nombre': row[1], 'rut': row[2]} for row in cursor.fetchall()]
-        print(f"Beneficiarios ({tipo}): {beneficiarios}")  # Debug
+        print(f"Beneficiarios ({tipo}): {beneficiarios}") 
         return jsonify(beneficiarios)
 
     except Exception as e:
@@ -361,7 +328,6 @@ def beneficiarios_por_tipo(tipo):
 @login_required
 def agregar_beneficiario():
     try:
-        # Obtener datos del JSON enviado
         data = request.json
         rut = data['rut']
         nombre = data['nombre']
@@ -370,7 +336,6 @@ def agregar_beneficiario():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Insertar el beneficiario según el tipo
         if tipo_beneficiario in ["Empresa", "Cliente"]:
             cursor.execute("""
                 INSERT INTO EntidadComercial (Rut, Nombre, TipoEntidad) 
@@ -394,7 +359,6 @@ def agregar_beneficiario():
 @login_required
 def agregar_banco():
     try:
-        # Obtener datos del JSON enviado
         data = request.json
         rut = data['rut']
         nombre = data['nombre']
@@ -402,7 +366,6 @@ def agregar_banco():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Insertar banco en la tabla `Entidad`
         cursor.execute("""
             INSERT INTO Entidad (Rut, Nombre, TipoEntidad) 
             VALUES (%s, %s, 'Banco') RETURNING ID_Entidad

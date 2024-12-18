@@ -1,22 +1,16 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required # type: ignore
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_required 
 from database import get_db_connection
 
-# Crear el Blueprint
 clientes_bp = Blueprint('clientes_bp', __name__)
 
 @clientes_bp.route('/clientes', methods=['GET'])
 @login_required
 def listar_clientes():
-    """
-    Muestra un listado de todas las clientes registrados en la base de datos.
-    """
     try:
-        # Conectar a la base de datos
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Consultar todos las clientes
         cursor.execute("""
             SELECT ID_Entidad, Rut, Nombre, FonoMovil, Email
             FROM EntidadComercial
@@ -35,14 +29,12 @@ def listar_clientes():
         if conn:
             conn.close()
 
-    # Renderizar la plantilla con las clientes
     return render_template('configuracion/clientes/clientes.html', clientes=clientes)
 
 @clientes_bp.route('/clientes/add', methods=['GET', 'POST'])
 @login_required
 def add_cliente():
     if request.method == 'POST':
-        # Capturar datos del formulario
         rut = request.form['rut']
         nombre = request.form['nombre'].upper()
         fono_fijo = request.form['fono_fijo']
@@ -53,7 +45,6 @@ def add_cliente():
             conn = get_db_connection()
             cursor = conn.cursor()
 
-            # Insertar en la tabla Entidad con TipoEntidad = 'Banco'
             cursor.execute("""
                 INSERT INTO EntidadComercial (Rut, Nombre, FonoFijo, FonoMovil, Email, TipoEntidad)
                 VALUES (%s, %s, %s, %s, %s, 'Cliente')
@@ -79,14 +70,12 @@ def edit_cliente(id_cliente):
         cursor = conn.cursor()
 
         if request.method == 'POST':
-            # Capturar datos del formulario
             rut = request.form['rut']
             nombre = request.form['nombre']
-            email = request.form.get('email')  # Opcional
-            fono_fijo = request.form.get('fono_fijo')  # Opcional
-            fono_movil = request.form.get('fono_movil')  # Opcional
+            email = request.form.get('email')  
+            fono_fijo = request.form.get('fono_fijo')  
+            fono_movil = request.form.get('fono_movil')  
 
-            # Actualizar el banco
             cursor.execute("""
                 UPDATE EntidadComercial
                 SET Rut = %s, Nombre = %s, Email = %s, FonoFijo = %s, FonoMovil = %s
@@ -97,7 +86,6 @@ def edit_cliente(id_cliente):
             flash("Cliente actualizado exitosamente.", "success")
             return redirect(url_for('clientes_bp.listar_clientes'))
 
-        # Obtener los datos actuales del banco
         cursor.execute("""
             SELECT Rut, Nombre, Email, FonoFijo, FonoMovil
             FROM EntidadComercial
@@ -130,14 +118,12 @@ def delete_cliente(id_cliente):
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Comprobar si el banco existe antes de eliminar
         cursor.execute("SELECT * FROM EntidadComercial WHERE ID_Entidad = %s AND TipoEntidad = 'Cliente'", (id_cliente,))
         cliente = cursor.fetchone()
         if not cliente:
             flash("La cliente no existe o no es del tipo 'Banco'.", "error")
             return redirect(url_for('clientes_bp.listar_clientes'))
 
-        # Intentar eliminar el banco
         cursor.execute("DELETE FROM EntidadComercial WHERE ID_Entidad = %s AND TipoEntidad = 'Cliente'", (id_cliente,))
         conn.commit()
 
@@ -151,5 +137,4 @@ def delete_cliente(id_cliente):
         cursor.close()
         conn.close()
 
-    # Redirigir al listado de bancos después de la eliminación
     return redirect(url_for('clientes_bp.listar_clientes'))
